@@ -1,0 +1,17 @@
+{
+  "name": "resource-network",
+  "version": "1.0.0",
+  "description": "Resource network library with graph algorithms",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": [
+    "graph",
+    "network",
+    "mst",
+    "shortest-path",
+    "max-flow"
+  ],
+  "license": "MIT"
+}
