@@ -1,4 +1,4 @@
-import { test, describe } from 'node:test';
+import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { set } from '../../src/core/set.js';
 import { node } from '../../src/core/node.js';
