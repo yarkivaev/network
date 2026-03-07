@@ -38,26 +38,44 @@ const quadtree = (boundary = null, capacity = 4, items = [], children = null, de
       return region(centerX - size / 2, centerY - size / 2, centerX + size / 2, centerY + size / 2);
     });
   };
+  const spans = (bnd, bounds) => {
+    const quads = subdivide(bnd);
+    let count = 0;
+    for (const q of quads) {
+      if (q.intersects(bounds)) {
+        count++;
+      }
+    }
+    return count > 1;
+  };
   const insertItem = (bnd, id, bounds, cap, itms, chld, lvl) => {
     if (!bnd.intersects(bounds)) {
       return quadtree(bnd, cap, itms, chld, lvl);
     }
+    if (spans(bnd, bounds) || lvl >= maxDepth) {
+      return quadtree(bnd, cap, [...itms, { id, bounds }], chld, lvl);
+    }
     if (chld === null) {
       const newItems = [...itms, { id, bounds }];
-      if (newItems.length <= cap || lvl >= maxDepth) {
+      if (newItems.length <= cap) {
         return quadtree(bnd, cap, newItems, null, lvl);
       }
       const quads = subdivide(bnd);
       let newChildren = quads.map((q) => quadtree(q, cap, [], null, lvl + 1));
+      const kept = [];
       for (const item of newItems) {
-        newChildren = newChildren.map((child, i) => {
-          if (quads[i].intersects(item.bounds)) {
-            return insertItem(quads[i], item.id, item.bounds, cap, child.items(), child.children(), lvl + 1);
-          }
-          return child;
-        });
+        if (spans(bnd, item.bounds)) {
+          kept.push(item);
+        } else {
+          newChildren = newChildren.map((child, i) => {
+            if (quads[i].intersects(item.bounds)) {
+              return insertItem(quads[i], item.id, item.bounds, cap, child.items(), child.children(), lvl + 1);
+            }
+            return child;
+          });
+        }
       }
-      return quadtree(bnd, cap, [], newChildren, lvl);
+      return quadtree(bnd, cap, kept, newChildren, lvl);
     }
     const quads = subdivide(bnd);
     const newChildren = chld.map((child, i) => {
@@ -66,7 +84,7 @@ const quadtree = (boundary = null, capacity = 4, items = [], children = null, de
       }
       return child;
     });
-    return quadtree(bnd, cap, [], newChildren, lvl);
+    return quadtree(bnd, cap, itms, newChildren, lvl);
   };
   return {
     insert: (id, worldBounds) => {

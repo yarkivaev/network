@@ -121,7 +121,10 @@ const canvas = {
   circle: (pos, radius, label) => {
     ctx.beginPath();
     ctx.arc(pos.x(), pos.y(), radius, 0, Math.PI * 2);
+    ctx.fillStyle = 'white';
+    ctx.fill();
     ctx.stroke();
+    ctx.fillStyle = 'black';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(label, pos.x(), pos.y());
@@ -132,7 +135,17 @@ const canvas = {
     ctx.moveTo(pos.x() - halfWidth, pos.y() - halfHeight);
     ctx.lineTo(pos.x() + halfWidth, pos.y() + halfHeight);
     ctx.stroke();
-    hitbox(pos.x() - halfWidth, pos.y() - halfHeight, halfWidth * 2, halfHeight * 2);
+    if (!debug) return;
+    const angle = Math.atan2(halfHeight, halfWidth);
+    const length = Math.sqrt(halfWidth * halfWidth + halfHeight * halfHeight) * 2;
+    const thickness = 20;
+    ctx.save();
+    ctx.translate(pos.x(), pos.y());
+    ctx.rotate(angle);
+    ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+    ctx.setLineDash([4, 4]);
+    ctx.strokeRect(-length / 2, -thickness / 2, length, thickness);
+    ctx.restore();
   }
 };
 
@@ -175,10 +188,18 @@ net = mutation(net).add(node('A'));
 net = mutation(net).add(node('B'));
 net = mutation(net).add(node('C'));
 net = mutation(net).add(node('D'));
+net = mutation(net).add(node('E'));
+net = mutation(net).add(node('F'));
+net = mutation(net).add(node('G'));
 net = mutation(net).link(edge(node('A'), node('B'), 1, 1));
 net = mutation(net).link(edge(node('A'), node('C'), 1, 1));
 net = mutation(net).link(edge(node('B'), node('D'), 1, 1));
 net = mutation(net).link(edge(node('C'), node('D'), 1, 1));
+net = mutation(net).link(edge(node('E'), node('A'), 1, 1));
+net = mutation(net).link(edge(node('E'), node('B'), 1, 1));
+net = mutation(net).link(edge(node('E'), node('C'), 1, 1));
+net = mutation(net).link(edge(node('E'), node('D'), 1, 1));
+net = mutation(net).link(edge(node('F'), node('A'), 1, 1));
 
 const lyt = layout(width, height, 100);
 const drws = drawables(
@@ -188,7 +209,7 @@ const drws = drawables(
 );
 const edgeF = (id, hw, hh) => drawable(
   id,
-  relativeRegion(Math.max(Math.abs(hw), 1), Math.max(Math.abs(hh), 1)),
+  relativeRegion(Math.max(Math.abs(hw), 10), Math.max(Math.abs(hh), 10)),
   (pos) => canvas.line(pos, hw, hh)
 );
 const lnd = landscape(net, lyt, drws, edgeF);

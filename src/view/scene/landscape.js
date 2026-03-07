@@ -16,6 +16,29 @@ const midpoint = (source, target) => point(
 );
 
 /**
+ * Computes shortest distance from a point to a line segment.
+ *
+ * Projects the point onto the segment and clamps the parameter
+ * to [0,1] so the nearest point is always on the segment.
+ *
+ * @param {Object} pt - The query point
+ * @param {Object} a - Segment start point
+ * @param {Object} b - Segment end point
+ * @returns {number} Distance from pt to the nearest point on segment AB
+ */
+const distance = (pt, a, b) => {
+  const dx = b.x() - a.x();
+  const dy = b.y() - a.y();
+  const lengthSq = dx * dx + dy * dy;
+  const t = lengthSq === 0
+    ? 0
+    : Math.max(0, Math.min(1, ((pt.x() - a.x()) * dx + (pt.y() - a.y()) * dy) / lengthSq));
+  const nx = a.x() + t * dx;
+  const ny = a.y() + t * dy;
+  return Math.sqrt((pt.x() - nx) ** 2 + (pt.y() - ny) ** 2);
+};
+
+/**
  * Replaces an edge drawable in the world with one sized to its endpoints.
  *
  * Removes the old edge, creates a new drawable via the factory with
@@ -96,8 +119,18 @@ const wrap = (wld, adjacency, topology, edgeF) => ({
       const newTgt = point(tgtPos.x() + dx, tgtPos.y() + dy);
       let updated = wld.move(conn.sourceId, newSrc);
       updated = updated.move(conn.targetId, newTgt);
-      updated = propagate(updated, adjacency, conn.sourceId, edgeF);
-      updated = propagate(updated, adjacency, conn.targetId, edgeF);
+      const edges = new Map();
+      for (const c of adjacency.get(conn.sourceId)) {
+        edges.set(c.edgeId, c);
+      }
+      for (const c of adjacency.get(conn.targetId)) {
+        edges.set(c.edgeId, c);
+      }
+      for (const c of edges.values()) {
+        const sp = updated.get([c.sourceId])[0].position;
+        const tp = updated.get([c.targetId])[0].position;
+        updated = reshape(updated, c.edgeId, sp, tp, edgeF);
+      }
       return wrap(updated, adjacency, topology, edgeF);
     }
     if (!adjacency.has(id)) {
@@ -111,12 +144,25 @@ const wrap = (wld, adjacency, topology, edgeF) => ({
   /**
    * Queries for drawables at a world point, nodes before edges.
    *
+   * Edge hits are filtered by distance to the actual line segment
+   * so that only points near the edge line register as hits.
+   *
    * @param {Object} pt - The world point to query
    * @returns {Array} Array of drawable identifiers at the point
    */
   query: (pt) => {
     const hits = wld.query(pt);
-    return hits.sort((a, b) => {
+    const threshold = 10;
+    const filtered = hits.filter((id) => {
+      if (!topology.has(id)) {
+        return true;
+      }
+      const conn = topology.get(id);
+      const src = wld.get([conn.sourceId])[0].position;
+      const tgt = wld.get([conn.targetId])[0].position;
+      return distance(pt, src, tgt) <= threshold;
+    });
+    return filtered.sort((a, b) => {
       const aEdge = topology.has(a) ? 1 : 0;
       const bEdge = topology.has(b) ? 1 : 0;
       return aEdge - bEdge;
@@ -124,12 +170,16 @@ const wrap = (wld, adjacency, topology, edgeF) => ({
   },
 
   /**
-   * Returns identifiers of drawables visible in a world region.
+   * Returns identifiers of drawables visible in a world region, edges first.
    *
    * @param {Object} rgn - The world region to check
-   * @returns {Array} Array of drawable identifiers in the region
+   * @returns {Array} Array of drawable identifiers, edges before nodes
    */
-  visible: (rgn) => wld.visible(rgn),
+  visible: (rgn) => wld.visible(rgn).sort((a, b) => {
+    const aNode = topology.has(a) ? 0 : 1;
+    const bNode = topology.has(b) ? 0 : 1;
+    return aNode - bNode;
+  }),
 
   /**
    * Gets drawables and positions by identifiers.
