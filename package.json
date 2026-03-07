@@ -4,7 +4,10 @@
   "description": "Resource network library with graph algorithms",
   "type": "module",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "playground": "vite playground"
   },
   "keywords": [
     "graph",
@@ -13,5 +16,11 @@
     "shortest-path",
     "max-flow"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "eslint": "^9.39.2",
+    "globals": "^17.0.0",
+    "vite": "^6.3.5"
+  }
 }

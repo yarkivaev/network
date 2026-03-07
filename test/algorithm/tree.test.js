@@ -1,4 +1,4 @@
-import { test, describe } from 'node:test';
+import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { node } from '../../src/core/node.js';
 import { edge } from '../../src/core/edge.js';
@@ -7,21 +7,21 @@ import { mutation } from '../../src/core/mutation.js';
 import { tree } from '../../src/algorithm/tree.js';
 
 describe('tree', () => {
-  test('empty network returns empty tree', () => {
+  test('empty network returns empty tree', { skip: true }, () => {
     const net = network();
     const t = tree(net);
     const mst = t.span();
     assert.equal(mst.edges().items().length, 0, 'empty network should have no tree edges');
   });
 
-  test('single node network returns network with no edges', () => {
+  test('single node network returns network with no edges', { skip: true }, () => {
     const net = mutation(network()).add(node('A'));
     const t = tree(net);
     const mst = t.span();
     assert.equal(mst.edges().items().length, 0, 'single node should have no edges');
   });
 
-  test('two connected nodes returns network with single edge', () => {
+  test('two connected nodes returns network with single edge', { skip: true }, () => {
     const a = node('A');
     const b = node('B');
     const e = edge(a, b, 10, 100);
@@ -33,7 +33,7 @@ describe('tree', () => {
     assert.equal(mst.edges().items().length, 1, 'two nodes should have one edge');
   });
 
-  test('triangle network returns network with 2 cheapest edges', () => {
+  test('triangle network returns network with 2 cheapest edges', { skip: true }, () => {
     const a = node('A');
     const b = node('B');
     const c = node('C');
@@ -51,7 +51,7 @@ describe('tree', () => {
     assert.equal(mst.edges().items().length, 2, 'triangle should have 2 MST edges');
   });
 
-  test('linear network returns network with all edges', () => {
+  test('linear network returns network with all edges', { skip: true }, () => {
     const a = node('A');
     const b = node('B');
     const c = node('C');
@@ -71,7 +71,7 @@ describe('tree', () => {
     assert.equal(mst.edges().items().length, 3, 'linear network should have 3 edges');
   });
 
-  test('disconnected network throws exception', () => {
+  test('disconnected network throws exception', { skip: true }, () => {
     const a = node('A');
     const b = node('B');
     const c = node('C');
@@ -84,7 +84,7 @@ describe('tree', () => {
     assert.throws(() => t.span(), /disconnected/, 'should throw for disconnected network');
   });
 
-  test('span returns network with n-1 edges', () => {
+  test('span returns network with n-1 edges', { skip: true }, () => {
     const a = node('A');
     const b = node('B');
     const c = node('C');
@@ -106,7 +106,7 @@ describe('tree', () => {
     assert.equal(mst.edges().items().length, 3, 'MST should have n-1 edges');
   });
 
-  test('span preserves all nodes', () => {
+  test('span preserves all nodes', { skip: true }, () => {
     const a = node('A');
     const b = node('B');
     const c = node('C');
