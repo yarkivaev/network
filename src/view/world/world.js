@@ -76,6 +76,29 @@ const world = (idx, drwMap, posMap) => ({
    * @param {Object} position - The world position
    * @returns {Object} A new world containing the drawable
    */
+  /**
+   * Removes a drawable from the world.
+   *
+   * @param {*} id - The identifier of the drawable to remove
+   * @returns {Object} A new world without the drawable
+   */
+  remove: (id) => {
+    const cleaned = idx.remove(id);
+    const newDrwMap = new Map(drwMap);
+    newDrwMap.delete(id);
+    const newPosMap = new Map(posMap);
+    newPosMap.delete(id);
+    return world(cleaned, newDrwMap, newPosMap);
+  },
+
+  /**
+   * Adds a new drawable at a position.
+   *
+   * @param {*} id - The identifier for the new drawable
+   * @param {Object} drawable - The drawable object
+   * @param {Object} position - The world position
+   * @returns {Object} A new world containing the drawable
+   */
   add: (id, drawable, position) => {
     const bounds = drawable.bounds().at(position);
     const newIdx = idx.add(id, bounds);

@@ -8,6 +8,16 @@ import { world } from '../src/view/world/world.js';
 import { quadtree } from '../src/view/spatial/quadtree.js';
 import { index } from '../src/view/spatial/index.js';
 import { drawableNode } from '../src/view/drawable/drawableNode.js';
+import { drawableEdge } from '../src/view/drawable/drawableEdge.js';
+import { drawable } from '../src/view/drawable/drawable.js';
+import { relativeRegion } from '../src/view/geometry/relativeRegion.js';
+import { drawables } from '../src/view/drawable/drawables.js';
+import { landscape } from '../src/view/scene/landscape.js';
+import { layout } from '../src/view/scene/layout.js';
+import { network } from '../src/core/network.js';
+import { mutation } from '../src/core/mutation.js';
+import { node } from '../src/core/node.js';
+import { edge } from '../src/core/edge.js';
 import { down } from '../src/view/action/down.js';
 import { move } from '../src/view/action/move.js';
 import { up } from '../src/view/action/up.js';
@@ -28,7 +38,7 @@ ctx.scale(dpr, dpr);
 const width = cssWidth;
 const height = cssHeight;
 
-let debug = true;
+let debug = false;
 
 /**
  * Formats a point for display.
@@ -159,24 +169,32 @@ const logStateChange = (actionType, screenPoint, beforeState, afterState) => {
 };
 
 const nodeRadius = 25;
-const nodeA = drawableNode('A', canvas, nodeRadius);
-const nodeB = drawableNode('B', canvas, nodeRadius);
-const nodeC = drawableNode('C', canvas, nodeRadius);
-const nodeD = drawableNode('D', canvas, nodeRadius);
 
-const posA = point(200, 100);
-const posB = point(300, 200);
-const posC = point(100, 200);
-const posD = point(200, 300);
+let net = network();
+net = mutation(net).add(node('A'));
+net = mutation(net).add(node('B'));
+net = mutation(net).add(node('C'));
+net = mutation(net).add(node('D'));
+net = mutation(net).link(edge(node('A'), node('B'), 1, 1));
+net = mutation(net).link(edge(node('A'), node('C'), 1, 1));
+net = mutation(net).link(edge(node('B'), node('D'), 1, 1));
+net = mutation(net).link(edge(node('C'), node('D'), 1, 1));
 
-let wld = world(index(quadtree()), new Map(), new Map());
-wld = wld.add('A', nodeA, posA);
-wld = wld.add('B', nodeB, posB);
-wld = wld.add('C', nodeC, posC);
-wld = wld.add('D', nodeD, posD);
+const lyt = layout(width, height, 100);
+const drws = drawables(
+  net,
+  (n) => drawableNode(n.identifier(), canvas, nodeRadius),
+  (e) => ({ id: () => e.identifier() })
+);
+const edgeF = (id, hw, hh) => drawable(
+  id,
+  relativeRegion(Math.max(Math.abs(hw), 1), Math.max(Math.abs(hh), 1)),
+  (pos) => canvas.line(pos, hw, hh)
+);
+const lnd = landscape(net, lyt, drws, edgeF);
 
 const cam = camera(point(0, 0), 1, width, height);
-let scn = scene(wld, cam);
+let scn = scene(lnd, cam);
 
 /**
  * Clears the canvas and renders the current scene.
