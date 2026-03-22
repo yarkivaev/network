@@ -9,6 +9,7 @@ import { zoom } from '../../../src/view/action/zoom.js';
 import { index } from '../../../src/view/spatial/index.js';
 import { quadtree } from '../../../src/view/spatial/quadtree.js';
 import { camera } from '../../../src/view/camera/camera.js';
+import { unproject } from '../../../src/view/camera/unproject.js';
 import { point } from '../../../src/view/geometry/point.js';
 import { drawable } from '../../../src/view/drawable/drawable.js';
 import { relativeRegion } from '../../../src/view/geometry/relativeRegion.js';
@@ -25,7 +26,7 @@ describe('scene', () => {
     const factor = 1 + Math.random();
     const wld = world(index(quadtree()), new Map(), new Map());
     let scn = scene(wld, camera(point(0, 0), 1, 800, 600));
-    scn = scn.action(zoom(factor));
+    scn = scn.action(zoom(factor, point(0, 0)));
     scn.render();
     assert.equal(typeof scn.action, 'function', 'zoom action did not return valid scene');
   });
@@ -165,8 +166,8 @@ describe('scene', () => {
   test('multiple zoom actions compound', () => {
     const wld = world(index(quadtree()), new Map(), new Map());
     let scn = scene(wld, camera(point(0, 0), 1, 800, 600));
-    scn = scn.action(zoom(2));
-    scn = scn.action(zoom(1.5));
+    scn = scn.action(zoom(2, point(0, 0)));
+    scn = scn.action(zoom(1.5, point(0, 0)));
     assert.equal(typeof scn.action, 'function', 'multiple zoom actions did not work');
   });
 
@@ -191,5 +192,70 @@ describe('scene', () => {
     const scn = scene(wld, camera(point(0, 0), 1, 800, 600));
     const next = scn.action(up(point(100, 100)));
     assert.equal(typeof next.action, 'function', 'up without down did not work');
+  });
+
+  test('zoom preserves world point under cursor for x', () => {
+    const ox = Math.random() * 200;
+    const oy = Math.random() * 200;
+    const z = 1 + Math.random();
+    const cx = Math.random() * 800;
+    const cy = Math.random() * 600;
+    const factor = 1 + Math.random();
+    const cam1 = camera(point(ox, oy), z, 800, 600);
+    const cursor = point(cx, cy);
+    const before = unproject(cam1, cursor).point();
+    const scn = scene(world(index(quadtree()), new Map(), new Map()), cam1);
+    const cam2 = scn.action(zoom(factor, cursor)).state().camera;
+    const after = unproject(cam2, cursor).point();
+    assert.ok(Math.abs(before.x() - after.x()) < 1e-10, 'world x under cursor shifted after zoom');
+  });
+
+  test('zoom preserves world point under cursor for y', () => {
+    const ox = Math.random() * 200;
+    const oy = Math.random() * 200;
+    const z = 1 + Math.random();
+    const cx = Math.random() * 800;
+    const cy = Math.random() * 600;
+    const factor = 1 + Math.random();
+    const cam1 = camera(point(ox, oy), z, 800, 600);
+    const cursor = point(cx, cy);
+    const before = unproject(cam1, cursor).point();
+    const scn = scene(world(index(quadtree()), new Map(), new Map()), cam1);
+    const cam2 = scn.action(zoom(factor, cursor)).state().camera;
+    const after = unproject(cam2, cursor).point();
+    assert.ok(Math.abs(before.y() - after.y()) < 1e-10, 'world y under cursor shifted after zoom');
+  });
+
+  test('zoom out preserves world point under cursor', () => {
+    const ox = Math.random() * 200;
+    const oy = Math.random() * 200;
+    const z = 1 + Math.random();
+    const cx = Math.random() * 800;
+    const cy = Math.random() * 600;
+    const factor = 0.3 + Math.random() * 0.6;
+    const cam1 = camera(point(ox, oy), z, 800, 600);
+    const cursor = point(cx, cy);
+    const before = unproject(cam1, cursor).point();
+    const scn = scene(world(index(quadtree()), new Map(), new Map()), cam1);
+    const cam2 = scn.action(zoom(factor, cursor)).state().camera;
+    const after = unproject(cam2, cursor).point();
+    assert.ok(Math.abs(before.x() - after.x()) < 1e-10, 'world point under cursor shifted after zoom out');
+  });
+
+  test('sequential zooms preserve world point under cursor', () => {
+    const ox = Math.random() * 200;
+    const oy = Math.random() * 200;
+    const z = 1 + Math.random();
+    const cx = Math.random() * 800;
+    const cy = Math.random() * 600;
+    const cursor = point(cx, cy);
+    const cam1 = camera(point(ox, oy), z, 800, 600);
+    const before = unproject(cam1, cursor).point();
+    let scn = scene(world(index(quadtree()), new Map(), new Map()), cam1);
+    scn = scn.action(zoom(1 + Math.random(), cursor));
+    scn = scn.action(zoom(0.3 + Math.random() * 0.6, cursor));
+    const cam2 = scn.state().camera;
+    const after = unproject(cam2, cursor).point();
+    assert.ok(Math.abs(before.x() - after.x()) < 1e-10, 'world point under cursor shifted after sequential zooms');
   });
 });

@@ -96,15 +96,17 @@ const fromState = (state) => ({
   }),
   action: (act) => {
     if (act.type() === 'zoom') {
-      const newCam = camera(state.cam.offset(), state.cam.zoom() * act.factor(), state.cam.width(), state.cam.height());
+      const f = act.factor();
+      const cx = act.point().x();
+      const cy = act.point().y();
+      const ox = state.cam.offset().x();
+      const oy = state.cam.offset().y();
+      const nx = cx * (1 - f) + ox * f;
+      const ny = cy * (1 - f) + oy * f;
+      const newCam = camera(point(nx, ny), state.cam.zoom() * f, state.cam.width(), state.cam.height());
       return fromState({ ...state, cam: newCam });
     }
     if (act.type() === 'down') {
-      const worldPt = toWorld(state.cam, act.point());
-      const hits = state.wld.query(worldPt);
-      if (hits.length > 0) {
-        return fromState({ ...state, mode: dragging(hits[0], act.point()) });
-      }
       return fromState({ ...state, mode: panning(act.point()) });
     }
     if (act.type() === 'move') {
@@ -120,7 +122,7 @@ const fromState = (state) => ({
     const items = state.wld.get(ids);
     for (const item of items) {
       if (item.drawable && item.position) {
-        item.drawable.draw(project(state.cam, item.position).point());
+        item.drawable.draw(project(state.cam, item.position).point(), state.cam.zoom());
       }
     }
   }

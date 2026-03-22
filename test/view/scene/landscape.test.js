@@ -55,7 +55,7 @@ describe('landscape', () => {
     const lyt = fakeLayout(new Map());
     const drws = drawables(net, () => ({}), () => ({}));
     const lnd = landscape(net, lyt, drws, fakeEdge);
-    const hits = lnd.query(point(Math.random() * 1000, Math.random() * 1000));
+    const hits = lnd.query(point(Math.random() * 1000, Math.random() * 1000), 1);
     assert.deepEqual(hits, [], 'query did not return empty for empty network');
   });
 
@@ -67,7 +67,7 @@ describe('landscape', () => {
     const radius = 25;
     const drws = drawables(net, (n) => fakeNode(n, radius), () => ({}));
     const lnd = landscape(net, lyt, drws, fakeEdge);
-    const hits = lnd.query(point(150, 150));
+    const hits = lnd.query(point(150, 150), 1);
     assert.equal(hits.length, 1, 'query did not find node drawable');
   });
 
@@ -80,7 +80,7 @@ describe('landscape', () => {
     const lyt = fakeLayout(positions);
     const drws = drawables(net, (n) => fakeNode(n, 10), (e) => ({ id: () => e.identifier() }));
     const lnd = landscape(net, lyt, drws, fakeEdge);
-    const hits = lnd.query(point(150, 150));
+    const hits = lnd.query(point(150, 150), 1);
     assert.equal(hits.length, 1, 'query did not find edge drawable at midpoint');
   });
 
@@ -94,7 +94,7 @@ describe('landscape', () => {
     const radius = 30;
     const drws = drawables(net, (n) => fakeNode(n, radius), (e) => ({ id: () => e.identifier() }));
     const lnd = landscape(net, lyt, drws, fakeEdge);
-    const hits = lnd.query(point(100, 100));
+    const hits = lnd.query(point(100, 100), 1);
     assert.ok(!hits[0].includes('->'), 'edge was returned before node');
   });
 
@@ -149,8 +149,45 @@ describe('landscape', () => {
     const lyt = fakeLayout(positions);
     const drws = drawables(net, (n) => fakeNode(n, 25), (e) => ({ id: () => e.identifier() }));
     const lnd = landscape(net, lyt, drws, fakeEdge);
-    const hits = lnd.query(point(200, 200));
+    const hits = lnd.query(point(200, 200), 1);
     assert.equal(hits.length, 1, 'non-ASCII identifier was not handled');
+  });
+
+  test('query misses node outside screen-constant bounds at high zoom', () => {
+    let net = network();
+    net = mutation(net).add(node('ξ'));
+    const positions = new Map([['ξ', point(100, 100)]]);
+    const lyt = fakeLayout(positions);
+    const radius = 25;
+    const drws = drawables(net, (n) => fakeNode(n, radius), () => ({}));
+    const lnd = landscape(net, lyt, drws, fakeEdge);
+    const hits = lnd.query(point(100 + 20, 100), 5);
+    assert.equal(hits.length, 0, 'node was hit outside screen-constant bounds at high zoom');
+  });
+
+  test('query finds node within screen-constant bounds at high zoom', () => {
+    let net = network();
+    net = mutation(net).add(node('ο'));
+    const positions = new Map([['ο', point(100, 100)]]);
+    const lyt = fakeLayout(positions);
+    const radius = 25;
+    const drws = drawables(net, (n) => fakeNode(n, radius), () => ({}));
+    const lnd = landscape(net, lyt, drws, fakeEdge);
+    const hits = lnd.query(point(100 + 3, 100), 5);
+    assert.equal(hits.length, 1, 'node was not found within screen-constant bounds at high zoom');
+  });
+
+  test('query misses edge beyond screen-constant threshold at high zoom', () => {
+    let net = network();
+    net = mutation(net).add(node('π'));
+    net = mutation(net).add(node('ρ'));
+    net = mutation(net).link(edge(node('π'), node('ρ'), 1, 1));
+    const positions = new Map([['π', point(100, 100)], ['ρ', point(300, 100)]]);
+    const lyt = fakeLayout(positions);
+    const drws = drawables(net, (n) => fakeNode(n, 10), (e) => ({ id: () => e.identifier() }));
+    const lnd = landscape(net, lyt, drws, fakeEdge);
+    const hits = lnd.query(point(200, 100 + 8), 5);
+    assert.equal(hits.length, 0, 'edge was hit beyond screen-constant threshold at high zoom');
   });
 
   test('visible returns drawables in region', () => {

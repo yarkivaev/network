@@ -1,6 +1,7 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { zoom } from '../../../src/view/action/zoom.js';
+import { point } from '../../../src/view/geometry/point.js';
 
 describe('zoom', () => {
   test('type returns zoom string', () => {
@@ -42,5 +43,29 @@ describe('zoom', () => {
     const factor = 10 + Math.random() * 90;
     const act = zoom(factor);
     assert.equal(act.factor(), factor, 'large factor was not handled');
+  });
+
+  test('point returns provided screen point', () => {
+    const pt = point(Math.random() * 800, Math.random() * 600);
+    const act = zoom(1 + Math.random(), pt);
+    assert.equal(act.point(), pt, 'point was not returned correctly');
+  });
+
+  test('point x matches original', () => {
+    const x = Math.random() * 800;
+    const act = zoom(1 + Math.random(), point(x, Math.random() * 600));
+    assert.equal(act.point().x(), x, 'point x did not match original');
+  });
+
+  test('point y matches original', () => {
+    const y = Math.random() * 600;
+    const act = zoom(1 + Math.random(), point(Math.random() * 800, y));
+    assert.equal(act.point().y(), y, 'point y did not match original');
+  });
+
+  test('handles negative cursor coordinates', () => {
+    const x = -(Math.random() * 100 + 1);
+    const act = zoom(Math.random() + 0.1, point(x, -(Math.random() * 100 + 1)));
+    assert.equal(act.point().x(), x, 'negative cursor coordinate was not handled');
   });
 });

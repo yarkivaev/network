@@ -27,7 +27,7 @@ import { relativeRegion } from '../geometry/relativeRegion.js';
 const drawableEdge = (id, canvas, halfWidth, halfHeight) => drawable(
   id,
   relativeRegion(halfWidth, halfHeight),
-  (pos) => canvas.line(pos, halfWidth, halfHeight)
+  (pos, zm) => canvas.line(pos, halfWidth * zm, halfHeight * zm)
 );
 
 export { drawableEdge };

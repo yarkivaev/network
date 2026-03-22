@@ -22,7 +22,7 @@
 const drawable = (id, bounds, render) => ({
   id: () => id,
   bounds: () => bounds,
-  draw: (position) => render(position)
+  draw: (position, zm) => render(position, zm)
 });
 
 export { drawable };

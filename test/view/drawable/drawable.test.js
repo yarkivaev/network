@@ -68,4 +68,12 @@ describe('drawable', () => {
     const world = d.bounds().at(pos);
     assert.equal(world.string(), 'region(80,70,120,130)', 'world region was incorrect');
   });
+
+  test('draw forwards zoom to render function', () => {
+    const zm = 1 + Math.random() * 4;
+    let received = null;
+    const d = drawable('test', relativeRegion(10, 10), (pos, z) => { received = z; });
+    d.draw(point(0, 0), zm);
+    assert.equal(received, zm, 'zoom was not forwarded to render');
+  });
 });

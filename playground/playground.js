@@ -4,36 +4,32 @@ import { camera } from '../src/view/camera/camera.js';
 import { unproject } from '../src/view/camera/unproject.js';
 import { project } from '../src/view/camera/project.js';
 import { scene } from '../src/view/scene/scene.js';
-import { world } from '../src/view/world/world.js';
-import { quadtree } from '../src/view/spatial/quadtree.js';
-import { index } from '../src/view/spatial/index.js';
 import { drawableNode } from '../src/view/drawable/drawableNode.js';
-import { drawableEdge } from '../src/view/drawable/drawableEdge.js';
 import { drawable } from '../src/view/drawable/drawable.js';
 import { relativeRegion } from '../src/view/geometry/relativeRegion.js';
 import { drawables } from '../src/view/drawable/drawables.js';
 import { landscape } from '../src/view/scene/landscape.js';
-import { layout } from '../src/view/scene/layout.js';
-import { network } from '../src/core/network.js';
-import { mutation } from '../src/core/mutation.js';
-import { node } from '../src/core/node.js';
-import { edge } from '../src/core/edge.js';
+import { embedding } from '../src/view/scene/embedding.js';
 import { down } from '../src/view/action/down.js';
 import { move } from '../src/view/action/move.js';
 import { up } from '../src/view/action/up.js';
 import { zoom } from '../src/view/action/zoom.js';
+import { triangulation } from '../src/generation/triangulation.js';
+import { normal } from '../src/generation/normal.js';
+import { bernoulli } from '../src/generation/bernoulli.js';
+import { obstacle } from '../src/generation/obstacle.js';
 
 const el = document.getElementById('canvas');
 const ctx = el.getContext('2d');
 const debugEl = document.getElementById('debug');
 const dpr = window.devicePixelRatio || 1;
 console.log(`Device pixel ratio: ${dpr}`);
-const cssWidth = 800;
-const cssHeight = 600;
+const cssWidth = window.innerWidth;
+const cssHeight = window.innerHeight;
 el.width = cssWidth * dpr;
 el.height = cssHeight * dpr;
-el.style.width = cssWidth + 'px';
-el.style.height = cssHeight + 'px';
+el.style.width = `${cssWidth}px`;
+el.style.height = `${cssHeight}px`;
 ctx.scale(dpr, dpr);
 const width = cssWidth;
 const height = cssHeight;
@@ -181,38 +177,23 @@ const logStateChange = (actionType, screenPoint, beforeState, afterState) => {
   console.log(`  Index boundary: ${fmtRegion(beforeIdx.boundary)} -> ${fmtRegion(afterIdx.boundary)}`);
 };
 
-const nodeRadius = 25;
+const nodeRadius = 7;
 
-let net = network();
-net = mutation(net).add(node('A'));
-net = mutation(net).add(node('B'));
-net = mutation(net).add(node('C'));
-net = mutation(net).add(node('D'));
-net = mutation(net).add(node('E'));
-net = mutation(net).add(node('F'));
-net = mutation(net).add(node('G'));
-net = mutation(net).link(edge(node('A'), node('B'), 1, 1));
-net = mutation(net).link(edge(node('A'), node('C'), 1, 1));
-net = mutation(net).link(edge(node('B'), node('D'), 1, 1));
-net = mutation(net).link(edge(node('C'), node('D'), 1, 1));
-net = mutation(net).link(edge(node('E'), node('A'), 1, 1));
-net = mutation(net).link(edge(node('E'), node('B'), 1, 1));
-net = mutation(net).link(edge(node('E'), node('C'), 1, 1));
-net = mutation(net).link(edge(node('E'), node('D'), 1, 1));
-net = mutation(net).link(edge(node('F'), node('A'), 1, 1));
+const topo = triangulation(10, normal(0, 15, Math.random), normal(50, 10, Math.random));
+const obs = obstacle(topo.network(), bernoulli(0.2, Math.random));
 
-const lyt = layout(width, height, 100);
+const lyt = embedding(width, height);
 const drws = drawables(
-  net,
+  obs,
   (n) => drawableNode(n.identifier(), canvas, nodeRadius),
   (e) => ({ id: () => e.identifier() })
 );
 const edgeF = (id, hw, hh) => drawable(
   id,
   relativeRegion(Math.max(Math.abs(hw), 10), Math.max(Math.abs(hh), 10)),
-  (pos) => canvas.line(pos, hw, hh)
+  (pos, zm) => canvas.line(pos, hw * zm, hh * zm)
 );
-const lnd = landscape(net, lyt, drws, edgeF);
+const lnd = landscape(obs, lyt, drws, edgeF);
 
 const cam = camera(point(0, 0), 1, width, height);
 let scn = scene(lnd, cam);
@@ -249,6 +230,12 @@ el.onmouseup = (e) => {
 
 el.onwheel = (e) => {
   e.preventDefault();
+  const before = scn.state();
+  const f = e.deltaY > 0 ? 0.98 : 1.02;
+  const pt = point(e.offsetX, e.offsetY);
+  scn = scn.action(zoom(f, pt));
+  logStateChange('ZOOM', pt, before, scn.state());
+  render();
 };
 
 document.onkeydown = (e) => {

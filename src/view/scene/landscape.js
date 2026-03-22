@@ -144,23 +144,31 @@ const wrap = (wld, adjacency, topology, edgeF) => ({
   /**
    * Queries for drawables at a world point, nodes before edges.
    *
-   * Edge hits are filtered by distance to the actual line segment
-   * so that only points near the edge line register as hits.
+   * Hit areas are constant in screen space. The zoom parameter scales
+   * world-space thresholds so that clickable regions do not grow when
+   * the camera zooms in.
    *
    * @param {Object} pt - The world point to query
+   * @param {number} zm - The current camera zoom level
    * @returns {Array} Array of drawable identifiers at the point
    */
-  query: (pt) => {
+  query: (pt, zm) => {
     const hits = wld.query(pt);
     const threshold = 10;
     const filtered = hits.filter((id) => {
       if (!topology.has(id)) {
-        return true;
+        const items = wld.get([id]);
+        const pos = items[0].position;
+        const extent = items[0].drawable.bounds().at(pos);
+        const half = extent.apply((x1, y1, x2, y2) => (x2 - x1) / 2);
+        const dx = pt.x() - pos.x();
+        const dy = pt.y() - pos.y();
+        return Math.sqrt(dx * dx + dy * dy) <= half / zm;
       }
       const conn = topology.get(id);
       const src = wld.get([conn.sourceId])[0].position;
       const tgt = wld.get([conn.targetId])[0].position;
-      return distance(pt, src, tgt) <= threshold;
+      return distance(pt, src, tgt) <= threshold / zm;
     });
     return filtered.sort((a, b) => {
       const aEdge = topology.has(a) ? 1 : 0;

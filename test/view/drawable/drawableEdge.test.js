@@ -37,25 +37,25 @@ describe('drawableEdge', () => {
     const canvas = { line: (pos) => { received = pos; } };
     const pos = point(100, 200);
     const d = drawableEdge('test', canvas, 50, 30);
-    d.draw(pos);
+    d.draw(pos, 1);
     assert.equal(received, pos, 'canvas was not invoked with position');
   });
 
-  test('draw invokes canvas line with halfWidth', () => {
+  test('draw invokes canvas line with halfWidth at zoom one', () => {
     let received = null;
     const hw = 45;
     const canvas = { line: (pos, halfWidth) => { received = halfWidth; } };
     const d = drawableEdge('test', canvas, hw, 30);
-    d.draw(point(0, 0));
+    d.draw(point(0, 0), 1);
     assert.equal(received, hw, 'canvas was not invoked with halfWidth');
   });
 
-  test('draw invokes canvas line with halfHeight', () => {
+  test('draw invokes canvas line with halfHeight at zoom one', () => {
     let received = null;
     const hh = 35;
     const canvas = { line: (pos, halfWidth, halfHeight) => { received = halfHeight; } };
     const d = drawableEdge('test', canvas, 50, hh);
-    d.draw(point(0, 0));
+    d.draw(point(0, 0), 1);
     assert.equal(received, hh, 'canvas was not invoked with halfHeight');
   });
 
@@ -63,8 +63,28 @@ describe('drawableEdge', () => {
     const expected = { drawn: true };
     const canvas = { line: () => expected };
     const d = drawableEdge('test', canvas, 50, 30);
-    const result = d.draw(point(0, 0));
+    const result = d.draw(point(0, 0), 1);
     assert.equal(result, expected, 'canvas result was not returned');
+  });
+
+  test('draw scales halfWidth by zoom', () => {
+    let received = null;
+    const hw = 40 + Math.random() * 60;
+    const zm = 1 + Math.random() * 4;
+    const canvas = { line: (pos, halfWidth) => { received = halfWidth; } };
+    const d = drawableEdge('test', canvas, hw, 30);
+    d.draw(point(0, 0), zm);
+    assert.ok(Math.abs(received - hw * zm) < 1e-10, 'halfWidth was not scaled by zoom');
+  });
+
+  test('draw scales halfHeight by zoom', () => {
+    let received = null;
+    const hh = 20 + Math.random() * 80;
+    const zm = 1 + Math.random() * 4;
+    const canvas = { line: (pos, halfWidth, halfHeight) => { received = halfHeight; } };
+    const d = drawableEdge('test', canvas, 50, hh);
+    d.draw(point(0, 0), zm);
+    assert.ok(Math.abs(received - hh * zm) < 1e-10, 'halfHeight was not scaled by zoom');
   });
 
   test('handles zero halfWidth', () => {
