@@ -13,13 +13,13 @@ const unit = { sample: () => 1 };
 describe('roadmap', () => {
   test('returns positive total cost', () => {
     const net = triangulation(5, normal(0, 10, Math.random), unit).network();
-    const col = colony(obstacle(net, bernoulli(0, Math.random)));
+    const col = colony(obstacle(net, bernoulli(0, Math.random), new Map()), bernoulli(0, Math.random));
     assert.ok(roadmap(col, fakeTree).cost() > 0, 'cost was not positive');
   });
 
   test('returns edge identifiers', () => {
     const net = triangulation(5, normal(0, 10, Math.random), unit).network();
-    const col = colony(obstacle(net, bernoulli(0, Math.random)));
+    const col = colony(obstacle(net, bernoulli(0, Math.random), new Map()), bernoulli(0, Math.random));
     assert.ok(roadmap(col, fakeTree).edges().size > 0, 'no edges returned');
   });
 });

@@ -166,6 +166,7 @@ export default [
       'src/view/spatial/quadtree.js',
       'src/core/mutation.js',
       'src/generation/triangulation.js',
+      'src/colony/colony.js',
       'src/colony/pump.js',
       'src/colony/fake.js',
       'playground/playground.js'

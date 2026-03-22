@@ -39,27 +39,37 @@ ctx.scale(dpr, dpr);
 const width = cssWidth;
 const height = cssHeight;
 
-const topo = triangulation(10, normal(0, 15, Math.random), normal(50, 10, Math.random));
-const obs = obstacle(topo.network(), bernoulli(0.2, Math.random));
-const col = colony(obs);
+const generate = (count) => {
+  const topo = triangulation(count, normal(0, 15, Math.random), normal(50, 10, Math.random));
+  const dist = bernoulli(0.2, Math.random);
+  const obs = obstacle(topo.network(), dist, new Map());
+  return colony(obs, dist);
+};
 
-const blockedEdges = new Set();
-for (const e of obs.edges().items()) {
-  if (obs.blocked(e.source().identifier(), e.target().identifier())) {
-    blockedEdges.add(e.identifier());
-  }
-}
+let original = generate(10);
+let col = original;
 
-const capacityMap = new Map();
-for (const e of obs.edges().items()) {
-  capacityMap.set(e.identifier(), e.capacity());
-}
-
+let blockedEdges = new Set();
+let capacityMap = new Map();
 let sel = selection();
 let hl = highlight();
 let flowMap = new Map();
 let labels = [];
+let destroyMode = false;
 const nodeRadius = 7;
+
+const rebuildMaps = () => {
+  const net = col.network();
+  blockedEdges = new Set();
+  capacityMap = new Map();
+  for (const e of net.edges().items()) {
+    if (net.blocked(e.source().identifier(), e.target().identifier())) {
+      blockedEdges.add(e.identifier());
+    }
+    capacityMap.set(e.identifier(), e.capacity());
+  }
+};
+rebuildMaps();
 
 const canvas = {
   circle: (pos, radius, label) => {
@@ -110,18 +120,23 @@ const canvas = {
   }
 };
 
-const lyt = embedding(width, height);
-const drws = drawables(
-  obs,
-  (n) => drawableNode(n.identifier(), canvas, nodeRadius),
-  (e) => ({ id: () => e.identifier() })
-);
 const edgeF = (id, hw, hh) => drawable(
   id,
   relativeRegion(Math.max(Math.abs(hw), 10), Math.max(Math.abs(hh), 10)),
   (pos, zm) => canvas.line(pos, hw * zm, hh * zm, id)
 );
-const lnd = landscape(obs, lyt, drws, edgeF);
+
+const rebuildScene = () => {
+  const net = col.network();
+  const lyt = embedding(width, height);
+  const drws = drawables(
+    net,
+    (n) => drawableNode(n.identifier(), canvas, nodeRadius),
+    (e) => ({ id: () => e.identifier() })
+  );
+  return landscape(net, lyt, drws, edgeF);
+};
+let lnd = rebuildScene();
 
 const cam = camera(point(0, 0), 1, width, height);
 let scn = scene(lnd, cam);
@@ -156,10 +171,35 @@ const render = () => {
   updatePanel();
 };
 
+const afterDestroy = () => {
+  rebuildMaps();
+  lnd = rebuildScene();
+  scn = scene(lnd, scn.state().camera);
+  flowMap = new Map();
+  hl = highlight();
+  sel = selection();
+  render();
+};
+
 el.onmousedown = (e) => {
   const pt = point(e.offsetX, e.offsetY);
   const worldPt = unproject(scn.state().camera, pt).point();
   const hits = scn.state().world.query(worldPt, scn.state().camera.zoom());
+  if (destroyMode) {
+    const nodeHit = hits.find((id) => !String(id).includes('->'));
+    if (nodeHit !== undefined) {
+      col = col.destroy(col.network().nodes().get(nodeHit));
+      afterDestroy();
+      return;
+    }
+    const edgeHit = hits.find((id) => String(id).includes('->'));
+    if (edgeHit !== undefined) {
+      const parts = String(edgeHit).split('->');
+      col = col.sever(Number(parts[0]), Number(parts[1]));
+      afterDestroy();
+      return;
+    }
+  }
   const nodeHit = hits.find((id) => !String(id).includes('->'));
   if (nodeHit !== undefined) {
     sel = sel.toggle(nodeHit);
@@ -229,6 +269,24 @@ document.getElementById('btn-critical').onclick = () => {
   const inf = infrastructure(col, fakeVulnerability);
   hl = highlight(inf.bridges(), inf.articulations(), '#e74c3c', `Bridges: ${inf.bridges().size / 2} | Critical modules: ${inf.articulations().size}`);
   render();
+};
+
+document.getElementById('btn-destroy').onclick = () => {
+  destroyMode = !destroyMode;
+  document.getElementById('btn-destroy').style.background = destroyMode ? '#8b2020' : '#333';
+  document.body.style.cursor = destroyMode ? 'crosshair' : 'default';
+};
+
+document.getElementById('btn-generate').onclick = () => {
+  const count = Number(document.getElementById('node-count').value) || 10;
+  original = generate(count);
+  col = original;
+  afterDestroy();
+};
+
+document.getElementById('btn-restore').onclick = () => {
+  col = original;
+  afterDestroy();
 };
 
 document.getElementById('btn-reset').onclick = () => {

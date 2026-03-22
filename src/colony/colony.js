@@ -4,19 +4,21 @@
  * A colony wraps a network that has position metadata and obstacle
  * information, presenting it in domain terms: modules (residential
  * units), roads (passable connections), and obstacles (blocked terrain).
+ * Supports destructive mutations that return new colony instances.
  *
- * @param {Object} net - Decorated network with position(id) and blocked(a, b)
- * @returns {Object} Colony with modules, roads, obstacles, distance, position
+ * @param {Object} net - Decorated network with position, blocked, decisions
+ * @param {Object} distribution - Bernoulli distribution for obstacle sampling
+ * @returns {Object} Colony with modules, roads, destroy, sever, etc
  *
  * @example
- * const col = colony(obstacle(topo.network(), bernoulli(0.2, Math.random)));
- * col.modules(); // all residential modules
- * col.roads();   // passable connections
+ * const col = colony(obs, bernoulli(0.2, Math.random));
+ * col.destroy(nodeObj); // returns new colony without that module
  */
 import { network } from '../core/network.js';
 import { mutation } from '../core/mutation.js';
+import { obstacle } from '../generation/obstacle.js';
 
-const colony = (net) => ({
+const colony = (net, distribution) => ({
   /**
    * Returns all residential modules in the colony.
    *
@@ -84,6 +86,40 @@ const colony = (net) => ({
       }
     }
     return result;
+  },
+  /**
+   * Returns the decorated network for external access.
+   *
+   * @returns {Object} The obstacle-decorated network
+   */
+  network: () => net,
+  /**
+   * Returns a new colony with the given module destroyed.
+   *
+   * @param {Object} nodeObj - The node object to remove
+   * @returns {Object} New colony without the module and its edges
+   */
+  destroy: (nodeObj) => {
+    const plain = mutation(net).remove(nodeObj);
+    const wrapped = { nodes: () => plain.nodes(), edges: () => plain.edges(), position: (id) => net.position(id) };
+    return colony(obstacle(wrapped, distribution, net.decisions()), distribution);
+  },
+  /**
+   * Returns a new colony with the road between two modules severed.
+   *
+   * @param {*} sourceId - First module identifier
+   * @param {*} targetId - Second module identifier
+   * @returns {Object} New colony without that road
+   */
+  sever: (sourceId, targetId) => {
+    const src = net.nodes().get(sourceId);
+    const tgt = net.nodes().get(targetId);
+    let plain = mutation(net).unlink(src, tgt);
+    if (plain.edges().has(`${targetId}->${sourceId}`)) {
+      plain = mutation(plain).unlink(tgt, src);
+    }
+    const wrapped = { nodes: () => plain.nodes(), edges: () => plain.edges(), position: (id) => net.position(id) };
+    return colony(obstacle(wrapped, distribution, net.decisions()), distribution);
   }
 });
 
