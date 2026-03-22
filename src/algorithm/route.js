@@ -23,6 +23,88 @@ const route = (net, origin, destination) => {
   if (!scanner.has(destination)) {
     throw new Error(`Destination node does not exist: ${destination.identifier()}`);
   }
+
+  let computed = false;
+  let distances = new Map();
+  let previous = new Map();
+  let exists = false;
+
+
+  const compute = () => {
+    if (computed) return;
+
+    const nodes = net.nodes().items();
+
+    // init
+    for (const n of nodes) {
+      distances.set(n.identifier(), Infinity);
+      previous.set(n.identifier(), null);
+    }
+
+    distances.set(origin.identifier(), 0);
+
+    const visited = new Set();
+
+    while (visited.size < nodes.length) {
+      // find closest unvisited
+      let current = null;
+      let minDist = Infinity;
+
+      for (const n of nodes) {
+        const id = n.identifier();
+        if (!visited.has(id) && distances.get(id) < minDist) {
+          minDist = distances.get(id);
+          current = n;
+        }
+      }
+
+      if (current === null) break;
+
+      const currentId = current.identifier();
+      visited.add(currentId);
+
+      // stop early if reached destination
+      if (currentId === destination.identifier()) break;
+
+      // relax edges
+      const neighbors = scanner.neighbors(current).from;
+
+      for (const e of neighbors) {
+        const neighbor = e.target();
+        const nid = neighbor.identifier();
+
+        const alt = distances.get(currentId) + e.cost();
+
+        if (alt < distances.get(nid)) {
+          distances.set(nid, alt);
+          previous.set(nid, currentId);
+        }
+      }
+    }
+
+    exists = distances.get(destination.identifier()) !== Infinity;
+    computed = true;
+  };
+
+  const buildPath = () => {
+    compute();
+
+    if (!exists) {
+      throw new Error('No path exists');
+    }
+
+    const path = [];
+    let currentId = destination.identifier();
+
+    while (currentId !== null) {
+      const node = net.nodes().get(currentId);
+      path.unshift(node);
+      currentId = previous.get(currentId);
+    }
+
+    return path;
+  };
+
   return {
     /**
      * Returns a new route finder for the same path.
@@ -30,7 +112,8 @@ const route = (net, origin, destination) => {
      * @returns {Object} New route object
      */
     shortest: () => {
-      throw new Error('Not implemented');
+      compute();
+      return route(net, origin, destination);
     },
     /**
      * Returns the ordered sequence of nodes in the path.
@@ -39,7 +122,7 @@ const route = (net, origin, destination) => {
      * @throws {Error} When no path exists
      */
     path: () => {
-      throw new Error('Not implemented');
+      return buildPath();
     },
     /**
      * Returns the total traversal cost of the path.
@@ -48,7 +131,13 @@ const route = (net, origin, destination) => {
      * @throws {Error} When no path exists
      */
     cost: () => {
-      throw new Error('Not implemented');
+      compute();
+
+      if (!exists) {
+        throw new Error('No path exists');
+      }
+
+      return distances.get(destination.identifier());
     },
     /**
      * Checks if a path exists between origin and destination.
@@ -56,7 +145,8 @@ const route = (net, origin, destination) => {
      * @returns {boolean} True if route is possible
      */
     exists: () => {
-      throw new Error('Not implemented');
+      compute();
+      return exists;
     }
   };
 };

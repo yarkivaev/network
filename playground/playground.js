@@ -22,8 +22,9 @@ import { roadmap } from '../src/colony/roadmap.js';
 import { supply } from '../src/colony/supply.js';
 import { pump } from '../src/colony/pump.js';
 import { infrastructure } from '../src/colony/infrastructure.js';
-import { fakeFlow, fakeRoute, fakeVulnerability } from '../src/colony/fake.js';
+import { fakeFlow, fakeVulnerability } from '../src/colony/fake.js';
 import { tree } from '../src/algorithm/tree.js';
+import { route } from '../src/algorithm/route.js';
 import { selection } from '../src/view/selection.js';
 import { highlight } from '../src/view/highlight.js';
 
@@ -262,7 +263,7 @@ document.getElementById('btn-route').onclick = () => {
     render();
     return;
   }
-  const s = supply(col, sel.origin(), sel.destination(), fakeRoute);
+  const s = supply(col, sel.origin(), sel.destination(), route);
   if (!s.exists()) {
     hl = highlight(new Set(), new Set(), '', 'No route found');
     render();
