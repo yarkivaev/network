@@ -24,6 +24,7 @@ import { pump } from '../src/colony/pump.js';
 import { infrastructure } from '../src/colony/infrastructure.js';
 import { fakeFlow, fakeRoute, fakeVulnerability } from '../src/colony/fake.js';
 import { tree } from '../src/algorithm/tree.js';
+import { vulnerability } from '../src/algorithm/vulnerability.js';
 import { selection } from '../src/view/selection.js';
 import { highlight } from '../src/view/highlight.js';
 
@@ -287,7 +288,7 @@ document.getElementById('btn-flow').onclick = () => {
 
 document.getElementById('btn-critical').onclick = () => {
   flowMap = new Map();
-  const inf = infrastructure(col, fakeVulnerability);
+  const inf = infrastructure(col, vulnerability);
   hl = highlight(inf.bridges(), inf.articulations(), '#e74c3c', `Bridges: ${inf.bridges().size / 2} | Critical modules: ${inf.articulations().size}`);
   render();
 };
