@@ -63,7 +63,7 @@
     </div>
     <div class="stats" id="stats"></div>
     <div class="selection" id="selection">Click a module to select</div>
-    <button id="btn-mst">Build Roads (MST)</button>
+    <button id="btn-mst">Show Roads (MST)</button>
     <button id="btn-route">Find Supply Route</button>
     <button id="btn-flow">Max Throughput</button>
     <button id="btn-critical">Critical Infrastructure</button>
@@ -71,6 +71,11 @@
     <button id="btn-restore">Restore Graph</button>
     <button id="btn-reset">Reset</button>
     <div class="results" id="results"></div>
+    <hr style="border-color: #444; margin: 8px 0;">
+    <div style="color: #777; font-size: 10px; line-height: 1.6;">
+      Edge label: distance|capacity<br>
+      With flow: distance|flow/capacity
+    </div>
   </div>
   <pre id="debug"></pre>
   <script type="module" src="./playground.js"></script>

@@ -52,22 +52,26 @@ let col = original;
 
 let blockedEdges = new Set();
 let capacityMap = new Map();
+let weightMap = new Map();
 let sel = selection();
 let hl = highlight();
 let flowMap = new Map();
 let labels = [];
 let destroyMode = false;
+let activeOverlay = null;
 const nodeRadius = 7;
 
 const rebuildMaps = () => {
   const net = col.network();
   blockedEdges = new Set();
   capacityMap = new Map();
+  weightMap = new Map();
   for (const e of net.edges().items()) {
     if (net.blocked(e.source().identifier(), e.target().identifier())) {
       blockedEdges.add(e.identifier());
     }
     capacityMap.set(e.identifier(), e.capacity());
+    weightMap.set(e.identifier(), e.cost());
   }
 };
 rebuildMaps();
@@ -113,7 +117,9 @@ const canvas = {
     const cap = capacityMap.get(edgeId);
     const parts = edgeId.split('->');
     if (cap !== undefined && parts[0] < parts[1]) {
-      const tag = flowMap.has(edgeId) ? `${flowMap.get(edgeId).toFixed(0)}/${cap.toFixed(0)}` : cap.toFixed(0);
+      const w = weightMap.get(edgeId);
+      const capStr = flowMap.has(edgeId) ? `${flowMap.get(edgeId).toFixed(0)}/${cap.toFixed(0)}` : `${cap.toFixed(0)}`;
+      const tag = `${w.toFixed(0)}|${capStr}`;
       const isFlow = flowMap.has(edgeId);
       labels.push({ x: pos.x(), y: pos.y() - 8, tag, isFlow });
     }
@@ -172,13 +178,27 @@ const render = () => {
   updatePanel();
 };
 
+const runMst = () => {
+  flowMap = new Map();
+  try {
+    const rm = roadmap(col, tree);
+    hl = highlight(rm.edges(), new Set(), '#2ecc71', `Road network cost: ${rm.cost().toFixed(1)}`);
+  } catch (e) {
+    hl = highlight(new Set(), new Set(), '#e74c3c', e.message);
+  }
+};
+
+const rerunOverlay = () => {
+  flowMap = new Map();
+  if (activeOverlay === 'mst') { runMst(); }
+  else { hl = highlight(); }
+};
+
 const afterDestroy = () => {
   rebuildMaps();
   lnd = rebuildScene();
   scn = scene(lnd, scn.state().camera);
-  flowMap = new Map();
-  hl = highlight();
-  sel = selection();
+  rerunOverlay();
   render();
 };
 
@@ -229,9 +249,9 @@ el.onwheel = (e) => {
 };
 
 document.getElementById('btn-mst').onclick = () => {
-  flowMap = new Map();
-  const rm = roadmap(col, tree);
-  hl = highlight(rm.edges(), new Set(), '#2ecc71', `Road network cost: ${rm.cost().toFixed(1)}`);
+  activeOverlay = activeOverlay === 'mst' ? null : 'mst';
+  document.getElementById('btn-mst').style.background = activeOverlay === 'mst' ? '#1a6b3a' : '#333';
+  rerunOverlay();
   render();
 };
 

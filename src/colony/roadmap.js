@@ -16,8 +16,8 @@
 const roadmap = (col, algorithm) => {
   const mst = algorithm(col.passable()).span();
   const items = mst.edges().items();
-  const edgeIds = new Set(items.map((e) => e.identifier()));
-  const total = items.reduce((sum, e) => sum + e.cost(), 0) / 2;
+  const edgeIds = new Set(items.flatMap((e) => [e.identifier(), `${e.target().identifier()}->${e.source().identifier()}`]));
+  const total = items.reduce((sum, e) => sum + e.cost(), 0);
   return {
     /**
      * Returns the total construction cost of the road network.
