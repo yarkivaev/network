@@ -24,6 +24,7 @@ import { pump } from '../src/colony/pump.js';
 import { infrastructure } from '../src/colony/infrastructure.js';
 import { fakeFlow, fakeRoute, fakeVulnerability } from '../src/colony/fake.js';
 import { tree } from '../src/algorithm/tree.js';
+import { flow } from '../src/algorithm/flow.js';
 import { selection } from '../src/view/selection.js';
 import { highlight } from '../src/view/highlight.js';
 
@@ -279,7 +280,7 @@ document.getElementById('btn-flow').onclick = () => {
     render();
     return;
   }
-  const p = pump(col, sel.origin(), fakeFlow);
+  const p = pump(col, sel.origin(), flow);
   flowMap = p.flow();
   hl = highlight(new Set([...p.flow().keys()]), p.bottlenecks(), '#e67e22', `Pump station ${sel.origin()} → all\nTotal flow: ${p.total().toFixed(1)}`);
   render();
