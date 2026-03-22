@@ -22,7 +22,8 @@ import { roadmap } from '../src/colony/roadmap.js';
 import { supply } from '../src/colony/supply.js';
 import { pump } from '../src/colony/pump.js';
 import { infrastructure } from '../src/colony/infrastructure.js';
-import { fakeFlow, fakeRoute, fakeTree, fakeVulnerability } from '../src/colony/fake.js';
+import { fakeFlow, fakeRoute, fakeVulnerability } from '../src/colony/fake.js';
+import { tree } from '../src/algorithm/tree.js';
 import { selection } from '../src/view/selection.js';
 import { highlight } from '../src/view/highlight.js';
 
@@ -229,7 +230,7 @@ el.onwheel = (e) => {
 
 document.getElementById('btn-mst').onclick = () => {
   flowMap = new Map();
-  const rm = roadmap(col, fakeTree);
+  const rm = roadmap(col, tree);
   hl = highlight(rm.edges(), new Set(), '#2ecc71', `Road network cost: ${rm.cost().toFixed(1)}`);
   render();
 };
