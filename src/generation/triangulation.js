@@ -129,7 +129,7 @@ const split = (state, v, weight) => {
  */
 const seed = (weight, capacity, nodes) => {
   const pa = { x: 0, y: 0 };
-  const pb = { x: 100 + Math.abs(weight.sample()), y: 0 };
+  const pb = { x: 100 + Math.abs(weight.sample()), y: weight.sample() + weight.sample() + weight.sample() };
   const cx = (pa.x + pb.x) / 2;
   const cy = 80 + Math.abs(weight.sample());
   const pc = { x: cx + weight.sample(), y: cy };
