@@ -160,9 +160,15 @@ export default [
   },
   {
     files: [
-      'src/view/scene/layout.js',
+      'src/view/scene/landscape.js',
+      'src/view/scene/embedding.js',
+      'src/view/scene/scene.js',
       'src/view/spatial/quadtree.js',
-      'src/core/mutation.js'
+      'src/core/mutation.js',
+      'src/generation/triangulation.js',
+      'src/colony/pump.js',
+      'src/colony/fake.js',
+      'playground/playground.js'
     ],
     rules: {
       'max-lines-per-function': 'off',
@@ -170,6 +176,21 @@ export default [
       'max-depth': 'off',
       'max-params': 'off',
       'no-continue': 'off'
+    }
+  },
+  {
+    files: ['playground/**/*.js'],
+    languageOptions: {
+      globals: {
+        ...globals.browser
+      }
+    },
+    rules: {
+      'max-lines': 'off',
+      'max-lines-per-function': 'off',
+      'max-statements': 'off',
+      'no-console': 'off',
+      'one-var': 'off'
     }
   }
 ];

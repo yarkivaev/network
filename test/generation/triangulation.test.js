@@ -66,10 +66,12 @@ describe('triangulation', () => {
   });
 
   test('produces deterministic output with fixed random', () => {
-    let a1 = 42, b1 = 7;
+    let a1 = 42;
+    let b1 = 7;
     const r1 = () => { a1 = (a1 * 1103515245 + 12345) & 0x7fffffff; return a1 / 0x7fffffff; };
     const w1 = { sample: () => { b1 = (b1 * 1103515245 + 12345) & 0x7fffffff; return 1 + (b1 % 100); } };
-    let a2 = 42, b2 = 7;
+    let a2 = 42;
+    let b2 = 7;
     const r2 = () => { a2 = (a2 * 1103515245 + 12345) & 0x7fffffff; return a2 / 0x7fffffff; };
     const w2 = { sample: () => { b2 = (b2 * 1103515245 + 12345) & 0x7fffffff; return 1 + (b2 % 100); } };
     const n1 = triangulation(20, w1, unit, unit).network();

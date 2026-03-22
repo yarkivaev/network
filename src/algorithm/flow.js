@@ -44,6 +44,14 @@ const flow = (net, source, sink) => {
      */
     bottlenecks: () => {
       throw new Error('Not implemented');
+    },
+    /**
+     * Returns all edges carrying flow.
+     *
+     * @returns {Array} Array of edges with non-zero flow
+     */
+    edges: () => {
+      throw new Error('Not implemented');
     }
   };
 };
