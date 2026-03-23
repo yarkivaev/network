@@ -2,7 +2,7 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { colony } from '../../src/colony/colony.js';
 import { roadmap } from '../../src/colony/roadmap.js';
-import { fakeTree, fakeRoute } from '../../src/colony/fake.js';
+import { fakeRoute, fakeTree } from '../../src/colony/fake.js';
 import { tree } from '../../src/algorithm/tree.js';
 import { triangulation } from '../../src/generation/triangulation.js';
 import { normal } from '../../src/generation/normal.js';

@@ -152,8 +152,8 @@ describe('tree', () => {
     const mst = t.span();
     assert.equal(mst.edges().items().length, 4, 'MST should have n-1 edges');
 
-    const actual = mst.edges().items().map(e =>
-      pair(e.source().identifier(), e.target().identifier()).identifier()
+    const actual = mst.edges().items().map(link =>
+      pair(link.source().identifier(), link.target().identifier()).identifier()
     );
 
     const expected = [
