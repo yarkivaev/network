@@ -27,6 +27,7 @@ import { vulnerability } from '../src/algorithm/vulnerability.js';
 import { flow } from '../src/algorithm/flow.js';
 import { selection } from '../src/view/selection.js';
 import { highlight } from '../src/view/highlight.js';
+import { arrow } from '../src/view/arrow.js';
 
 const el = document.getElementById('canvas');
 const ctx = el.getContext('2d');
@@ -124,15 +125,27 @@ const canvas = {
     ctx.moveTo(pos.x() - halfWidth, pos.y() - halfHeight);
     ctx.lineTo(pos.x() + halfWidth, pos.y() + halfHeight);
     ctx.stroke();
+    if (flowMap.has(edgeId)) {
+      const vertices = arrow(pos, halfWidth, halfHeight, 6).vertices();
+      ctx.beginPath();
+      ctx.moveTo(vertices[0].x(), vertices[0].y());
+      ctx.lineTo(vertices[1].x(), vertices[1].y());
+      ctx.lineTo(vertices[2].x(), vertices[2].y());
+      ctx.closePath();
+      ctx.fillStyle = ctx.strokeStyle;
+      ctx.fill();
+    }
     const parts = edgeId.split('->');
     if (parts[0] < parts[1] && (showDistance || showCapacity)) {
+      const reverseId = `${parts[1]}->${parts[0]}`;
+      const flowValue = flowMap.get(edgeId) || flowMap.get(reverseId);
       const segments = [];
       if (showDistance) { segments.push(weightMap.get(edgeId).toFixed(0)); }
       if (showCapacity) {
         const cap = capacityMap.get(edgeId);
-        segments.push(flowMap.has(edgeId) ? `${flowMap.get(edgeId).toFixed(0)}/${cap.toFixed(0)}` : `${cap.toFixed(0)}`);
+        segments.push(flowValue !== undefined ? `${flowValue.toFixed(0)}/${cap.toFixed(0)}` : `${cap.toFixed(0)}`);
       }
-      labels.push({ x: pos.x(), y: pos.y() - 8, tag: segments.join('|'), isFlow: flowMap.has(edgeId) });
+      labels.push({ x: pos.x(), y: pos.y() - 8, tag: segments.join('|'), isFlow: flowValue !== undefined });
     }
     ctx.restore();
   }
@@ -209,6 +222,18 @@ const syncButtons = () => {
   document.getElementById('btn-mst').style.background = activeOverlay === 'mst' ? '#1a6b3a' : '#333';
   document.getElementById('btn-route').style.display = activeOverlay === 'mst' ? '' : 'none';
   document.getElementById('btn-critical').style.background = activeOverlay === 'critical' ? '#8b2020' : '#333';
+  document.getElementById('btn-flow').style.background = activeOverlay === 'flow' ? '#b35900' : '#333';
+};
+
+const runFlow = () => {
+  if (sel.origin() === undefined || sel.destination() === undefined) {
+    hl = highlight(new Set(), new Set(), '', 'Select 2 modules first');
+    flowMap = new Map();
+    return;
+  }
+  const p = pump(col, sel.origin(), sel.destination(), flow);
+  flowMap = p.flow();
+  hl = highlight(new Set([...p.flow().keys()]), p.bottlenecks(), '#e67e22', `Flow: ${sel.origin()} → ${sel.destination()}\nMax flow: ${p.total().toFixed(1)}`);
 };
 
 const rerunOverlay = () => {
@@ -216,6 +241,7 @@ const rerunOverlay = () => {
   routeHl = highlight();
   if (activeOverlay === 'mst') { runMst(); }
   else if (activeOverlay === 'critical') { currentRoadmap = null; runCritical(); }
+  else if (activeOverlay === 'flow') { runFlow(); }
   else { currentRoadmap = null; hl = highlight(); }
 };
 
@@ -309,15 +335,9 @@ document.getElementById('btn-route').onclick = () => {
 };
 
 document.getElementById('btn-flow').onclick = () => {
-  if (sel.origin() === undefined || sel.destination() === undefined) {
-    hl = highlight(new Set(), new Set(), '', 'Select 2 modules first');
-    flowMap = new Map();
-    render();
-    return;
-  }
-  const p = pump(col, sel.origin(), sel.destination(), flow);
-  flowMap = p.flow();
-  hl = highlight(new Set([...p.flow().keys()]), p.bottlenecks(), '#e67e22', `Flow: ${sel.origin()} → ${sel.destination()}\nMax flow: ${p.total().toFixed(1)}`);
+  activeOverlay = activeOverlay === 'flow' ? null : 'flow';
+  syncButtons();
+  rerunOverlay();
   render();
 };
 
