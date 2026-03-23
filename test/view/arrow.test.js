@@ -68,7 +68,7 @@ describe('arrow', () => {
     const hh = -50 + Math.random() * 100;
     const size = 3 + Math.random() * 20;
     const len = Math.sqrt(hw * hw + hh * hh);
-    if (len < 1e-10) return;
+    if (len < 1e-10) { return; }
     const vertices = arrow(point(0, 0), hw, hh, size).vertices();
     const dist = Math.sqrt(vertices[0].x() ** 2 + vertices[0].y() ** 2);
     assert.ok(Math.abs(dist - size) < 1e-10, 'tip distance from center did not equal size');

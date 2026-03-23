@@ -143,7 +143,7 @@ const canvas = {
       if (showDistance) { segments.push(weightMap.get(edgeId).toFixed(0)); }
       if (showCapacity) {
         const cap = capacityMap.get(edgeId);
-        segments.push(flowValue !== undefined ? `${flowValue.toFixed(0)}/${cap.toFixed(0)}` : `${cap.toFixed(0)}`);
+        segments.push(flowValue === undefined ? `${cap.toFixed(0)}` : `${flowValue.toFixed(0)}/${cap.toFixed(0)}`);
       }
       labels.push({ x: pos.x(), y: pos.y() - 8, tag: segments.join('|'), isFlow: flowValue !== undefined });
     }
