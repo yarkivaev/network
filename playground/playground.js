@@ -1,7 +1,6 @@
 import { point } from '../src/view/geometry/point.js';
 import { camera } from '../src/view/camera/camera.js';
 import { unproject } from '../src/view/camera/unproject.js';
-import { project } from '../src/view/camera/project.js';
 import { scene } from '../src/view/scene/scene.js';
 import { drawableNode } from '../src/view/drawable/drawableNode.js';
 import { drawable } from '../src/view/drawable/drawable.js';
@@ -22,10 +21,10 @@ import { roadmap } from '../src/colony/roadmap.js';
 import { supply } from '../src/colony/supply.js';
 import { pump } from '../src/colony/pump.js';
 import { infrastructure } from '../src/colony/infrastructure.js';
-import { fakeFlow, fakeVulnerability } from '../src/colony/fake.js';
 import { tree } from '../src/algorithm/tree.js';
 import { route } from '../src/algorithm/route.js';
 import { vulnerability } from '../src/algorithm/vulnerability.js';
+import { flow } from '../src/algorithm/flow.js';
 import { selection } from '../src/view/selection.js';
 import { highlight } from '../src/view/highlight.js';
 
@@ -310,15 +309,15 @@ document.getElementById('btn-route').onclick = () => {
 };
 
 document.getElementById('btn-flow').onclick = () => {
-  if (sel.origin() === undefined) {
-    hl = highlight(new Set(), new Set(), '', 'Select a pump station module');
+  if (sel.origin() === undefined || sel.destination() === undefined) {
+    hl = highlight(new Set(), new Set(), '', 'Select 2 modules first');
     flowMap = new Map();
     render();
     return;
   }
-  const p = pump(col, sel.origin(), fakeFlow);
+  const p = pump(col, sel.origin(), sel.destination(), flow);
   flowMap = p.flow();
-  hl = highlight(new Set([...p.flow().keys()]), p.bottlenecks(), '#e67e22', `Pump station ${sel.origin()} → all\nTotal flow: ${p.total().toFixed(1)}`);
+  hl = highlight(new Set([...p.flow().keys()]), p.bottlenecks(), '#e67e22', `Flow: ${sel.origin()} → ${sel.destination()}\nMax flow: ${p.total().toFixed(1)}`);
   render();
 };
 

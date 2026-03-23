@@ -1,53 +1,44 @@
 /**
- * Creates an immutable pump station analysis for a colony.
+ * Creates an immutable pump analysis between two modules in a colony.
  *
- * Calculates maximum flow from a pump station to all other modules
- * by delegating to an injected flow algorithm for each destination.
+ * Calculates maximum flow from a source module to a sink module
+ * by delegating to an injected flow algorithm.
  *
  * @param {Object} col - The colony to analyze
- * @param {*} station - Pump station module identifier
+ * @param {*} source - Source module identifier
+ * @param {*} sink - Sink module identifier
  * @param {Function} algorithm - Flow factory matching flow(net, s, t) interface
  * @returns {Object} Pump with total, flow, and bottlenecks methods
  *
  * @example
- * const p = pump(colony, 0, fakeFlow);
- * p.total(); // total flow to all modules
+ * const p = pump(colony, 0, 3, flow);
+ * p.total(); // max flow from module 0 to module 3
  */
-const pump = (col, station, algorithm) => {
+const pump = (col, source, sink, algorithm) => {
   const net = col.passable();
-  const stationNode = net.nodes().get(station);
-  const modules = col.modules().map((m) => m.identifier()).filter((id) => id !== station);
+  const result = algorithm(net, net.nodes().get(source), net.nodes().get(sink));
   const flows = new Map();
-  let total = 0;
-  for (const sink of modules) {
-    const sinkNode = net.nodes().get(sink);
-    const result = algorithm(net, stationNode, sinkNode);
-    const max = result.maximum();
-    total += max;
-    for (const e of result.edges()) {
-      flows.set(e.identifier(), (flows.get(e.identifier()) || 0) + max);
-    }
+  for (const e of result.edges()) {
+    flows.set(e.identifier(), result.maximum());
   }
-  let maxLoad = 0;
-  for (const [, v] of flows) { maxLoad = Math.max(maxLoad, v); }
-  const necks = new Set([...flows.entries()].filter(([, v]) => v === maxLoad).map(([k]) => k));
+  const necks = new Set(result.bottlenecks().map((e) => e.identifier()));
   return {
     /**
-     * Returns the total flow from station to all modules.
+     * Returns the maximum flow from source to sink.
      *
-     * @returns {number} Sum of maximum flows
+     * @returns {number} Maximum flow value
      */
-    total: () => total,
+    total: () => result.maximum(),
     /**
-     * Returns the accumulated flow per edge.
+     * Returns the flow per edge.
      *
-     * @returns {Map} Map of edge identifier to total flow
+     * @returns {Map} Map of edge identifier to flow value
      */
     flow: () => flows,
     /**
-     * Returns the most loaded edges.
+     * Returns the bottleneck edges at full capacity.
      *
-     * @returns {Set} Edge identifiers with highest accumulated flow
+     * @returns {Set} Edge identifiers at capacity
      */
     bottlenecks: () => necks
   };
