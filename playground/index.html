@@ -57,8 +57,26 @@
   <div id="panel">
     <h3>Mars Colony</h3>
     <div style="margin-bottom: 8px;">
-      <label style="color: #888;">Modules:</label>
-      <input id="node-count" type="number" value="10" min="3" max="50" style="width: 50px; background: #444; color: #ddd; border: 1px solid #555; border-radius: 3px; padding: 2px 4px; font-family: monospace;">
+      <div style="margin-bottom: 4px;">
+        <label style="color: #888;">Modules:</label>
+        <input id="node-count" type="number" value="10" min="3" max="50" style="width: 50px; background: #444; color: #ddd; border: 1px solid #555; border-radius: 3px; padding: 2px 4px; font-family: monospace;">
+      </div>
+      <div style="margin-bottom: 4px;">
+        <label style="color: #888;">Weight &sigma;:</label>
+        <input id="weight-dev" type="number" value="15" min="0" max="100" step="1" style="width: 50px; background: #444; color: #ddd; border: 1px solid #555; border-radius: 3px; padding: 2px 4px; font-family: monospace;">
+      </div>
+      <div style="margin-bottom: 4px;">
+        <label style="color: #888;">Capacity &mu;:</label>
+        <input id="cap-mean" type="number" value="50" min="1" max="500" step="1" style="width: 50px; background: #444; color: #ddd; border: 1px solid #555; border-radius: 3px; padding: 2px 4px; font-family: monospace;">
+      </div>
+      <div style="margin-bottom: 4px;">
+        <label style="color: #888;">Capacity &sigma;:</label>
+        <input id="cap-dev" type="number" value="10" min="0" max="100" step="1" style="width: 50px; background: #444; color: #ddd; border: 1px solid #555; border-radius: 3px; padding: 2px 4px; font-family: monospace;">
+      </div>
+      <div style="margin-bottom: 4px;">
+        <label style="color: #888;">Obstacle P:</label>
+        <input id="obstacle-prob" type="number" value="0.2" min="0" max="1" step="0.05" style="width: 50px; background: #444; color: #ddd; border: 1px solid #555; border-radius: 3px; padding: 2px 4px; font-family: monospace;">
+      </div>
       <button id="btn-generate">Generate</button>
     </div>
     <div class="stats" id="stats"></div>
