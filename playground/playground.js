@@ -41,14 +41,14 @@ ctx.scale(dpr, dpr);
 const width = cssWidth;
 const height = cssHeight;
 
-const generate = (count) => {
-  const topo = triangulation(count, normal(0, 15, Math.random), normal(50, 10, Math.random));
-  const dist = bernoulli(0.2, Math.random);
+const generate = (count, weightDev, capMean, capDev, obstacleProb) => {
+  const topo = triangulation(count, normal(0, weightDev, Math.random), normal(capMean, capDev, Math.random));
+  const dist = bernoulli(obstacleProb, Math.random);
   const obs = obstacle(topo.network(), dist, new Map());
   return colony(obs, dist);
 };
 
-let original = generate(10);
+let original = generate(10, 15, 50, 10, 0.2);
 let col = original;
 
 let blockedEdges = new Set();
@@ -336,7 +336,17 @@ document.getElementById('btn-destroy').onclick = () => {
 
 document.getElementById('btn-generate').onclick = () => {
   const count = Number(document.getElementById('node-count').value) || 10;
-  original = generate(count);
+  const weightDev = parseFloat(document.getElementById('weight-dev').value);
+  const capMean = parseFloat(document.getElementById('cap-mean').value);
+  const capDev = parseFloat(document.getElementById('cap-dev').value);
+  const obstacleProb = parseFloat(document.getElementById('obstacle-prob').value);
+  original = generate(
+    count,
+    isNaN(weightDev) ? 15 : weightDev,
+    isNaN(capMean) ? 50 : capMean,
+    isNaN(capDev) ? 10 : capDev,
+    isNaN(obstacleProb) ? 0.2 : obstacleProb
+  );
   col = original;
   afterDestroy();
 };
