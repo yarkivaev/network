@@ -25,6 +25,7 @@ import { infrastructure } from '../src/colony/infrastructure.js';
 import { fakeFlow, fakeVulnerability } from '../src/colony/fake.js';
 import { tree } from '../src/algorithm/tree.js';
 import { route } from '../src/algorithm/route.js';
+import { vulnerability } from '../src/algorithm/vulnerability.js';
 import { selection } from '../src/view/selection.js';
 import { highlight } from '../src/view/highlight.js';
 
@@ -200,10 +201,22 @@ const runMst = () => {
   }
 };
 
+const runCritical = () => {
+  const inf = infrastructure(col, vulnerability);
+  hl = highlight(inf.bridges(), inf.articulations(), '#e74c3c', `Bridges: ${inf.bridges().size / 2} | Critical modules: ${inf.articulations().size}`);
+};
+
+const syncButtons = () => {
+  document.getElementById('btn-mst').style.background = activeOverlay === 'mst' ? '#1a6b3a' : '#333';
+  document.getElementById('btn-route').style.display = activeOverlay === 'mst' ? '' : 'none';
+  document.getElementById('btn-critical').style.background = activeOverlay === 'critical' ? '#8b2020' : '#333';
+};
+
 const rerunOverlay = () => {
   flowMap = new Map();
   routeHl = highlight();
   if (activeOverlay === 'mst') { runMst(); }
+  else if (activeOverlay === 'critical') { currentRoadmap = null; runCritical(); }
   else { currentRoadmap = null; hl = highlight(); }
 };
 
@@ -264,8 +277,7 @@ el.onwheel = (e) => {
 
 document.getElementById('btn-mst').onclick = () => {
   activeOverlay = activeOverlay === 'mst' ? null : 'mst';
-  document.getElementById('btn-mst').style.background = activeOverlay === 'mst' ? '#1a6b3a' : '#333';
-  document.getElementById('btn-route').style.display = activeOverlay === 'mst' ? '' : 'none';
+  syncButtons();
   rerunOverlay();
   render();
 };
@@ -311,9 +323,9 @@ document.getElementById('btn-flow').onclick = () => {
 };
 
 document.getElementById('btn-critical').onclick = () => {
-  flowMap = new Map();
-  const inf = infrastructure(col, fakeVulnerability);
-  hl = highlight(inf.bridges(), inf.articulations(), '#e74c3c', `Bridges: ${inf.bridges().size / 2} | Critical modules: ${inf.articulations().size}`);
+  activeOverlay = activeOverlay === 'critical' ? null : 'critical';
+  syncButtons();
+  rerunOverlay();
   render();
 };
 
