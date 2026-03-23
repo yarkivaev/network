@@ -23,8 +23,8 @@ const maximumFlow = (net, source, sink) => {
   for (const edge of edges) {
     const sourceId = edge.source().identifier();
     const targetId = edge.target().identifier();
-    const key = `${sourceId}-${targetId}`;
-    const reverseKey = `${targetId}-${sourceId}`;
+    const key = `${sourceId}->${targetId}`;
+    const reverseKey = `${targetId}->${sourceId}`;
     
     edgeMap.set(key, edge);
     if (residualCapacity.has(key)) {
@@ -53,9 +53,7 @@ const maximumFlow = (net, source, sink) => {
     
     while (queue.length > 0) {
       const currentId = queue.shift();
-        console.log(currentId);
         if (currentId === sink.identifier()) {
-          console.log(`sink ${currentId}`);
         // Reconstruct path and find bottleneck capacity
         const path = [];
         let node = sink.identifier();
@@ -63,7 +61,7 @@ const maximumFlow = (net, source, sink) => {
         
         while (node !== sourceId) {
           const parentId = parent.get(node);
-          const edgeKey = `${parentId}-${node}`;
+          const edgeKey = `${parentId}->${node}`;
           pathFlow = Math.min(pathFlow, residualCapacity.get(edgeKey) || 0);
           path.unshift({ from: parentId, to: node });
           node = parentId;
@@ -73,8 +71,8 @@ const maximumFlow = (net, source, sink) => {
         node = sink.identifier();
         while (node !== sourceId) {
           const parentId = parent.get(node);
-          const forwardKey = `${parentId}-${node}`;
-          const backwardKey = `${node}-${parentId}`;
+          const forwardKey = `${parentId}->${node}`;
+          const backwardKey = `${node}->${parentId}`;
           
           residualCapacity.set(forwardKey, (residualCapacity.get(forwardKey) || 0) - pathFlow);
           residualCapacity.set(backwardKey, (residualCapacity.get(backwardKey) || 0) + pathFlow);
@@ -90,9 +88,8 @@ const maximumFlow = (net, source, sink) => {
         const tgtId = (edge.target().identifier() == currentId) ? edge.source().identifier() : edge.target().identifier();
         const srcId = currentId;
         
-        const edgeKey = `${srcId}-${tgtId}`;
+        const edgeKey = `${srcId}->${tgtId}`;
         const capacity = residualCapacity.get(edgeKey) || 0;
-        console.log(`tgtId ${tgtId} cap ${capacity}`);
         if (capacity > 0 && !visited.has(tgtId)) {
             visited.add(tgtId);
             parent.set(tgtId, srcId);
@@ -108,17 +105,20 @@ const maximumFlow = (net, source, sink) => {
   
   const edgesWithFlow = [];
   const bottlenecks = [];
+  const flows = new Map();
   
   for (const edge of edges) {
     const sourceId = edge.source().identifier();
     const targetId = edge.target().identifier();
-    const forwardKey = `${sourceId}-${targetId}`;
+    const forwardKey = `${sourceId}->${targetId}`;
     
     // Flow is the original capacity minus residual capacity
     const originalCapacity = edge.capacity();
     const residual = residualCapacity.get(forwardKey) || 0;
     const flow = originalCapacity - residual;
-    
+    if (flow > 0) {
+      flows.set(forwardKey, flow);
+    }
     if (flow > 0) {
       edgesWithFlow.push(edge);
       
@@ -128,11 +128,12 @@ const maximumFlow = (net, source, sink) => {
       }
     }
   }
-  
+  console.log(flows);
   return {
     maximum: maxFlow,
     bottlenecks: bottlenecks,
-    edges: edgesWithFlow
+    edges: edgesWithFlow,
+    flows: flows
   };
 };
 
@@ -189,6 +190,14 @@ const flow = (net, source, sink) => {
      */
     edges: () => {
       return maxFlow.edges;
+    },
+    /**
+     * Returns all flows.
+     *
+     * @returns {Array} Array of flows
+     */
+    flows: () => {
+      return maxFlow.flows;
     }
   };
 };
