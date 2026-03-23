@@ -7,7 +7,7 @@ import { mutation } from '../../src/core/mutation.js';
 import { flow } from '../../src/algorithm/flow.js';
 
 describe('flow', () => {
-  test('single edge flow equals edge capacity', { skip: true }, () => {
+  test('single edge flow equals edge capacity', () => {
     const a = node('A');
     const b = node('B');
     const e = edge(a, b, 1, 100);
@@ -18,7 +18,7 @@ describe('flow', () => {
     assert.equal(f.maximum(), 100, 'max flow should equal capacity');
   });
 
-  test('two parallel edges flow equals sum of capacities', { skip: true }, () => {
+  test('two parallel edges flow equals sum of capacities', () => {
     const a = node('A');
     const b = node('B');
     const c = node('C');
@@ -39,7 +39,7 @@ describe('flow', () => {
     assert.equal(f.maximum(), 100, 'max flow should be sum of parallel paths');
   });
 
-  test('serial edges flow equals minimum capacity', { skip: true }, () => {
+  test('serial edges flow equals minimum capacity', () => {
     const a = node('A');
     const b = node('B');
     const c = node('C');
@@ -54,7 +54,7 @@ describe('flow', () => {
     assert.equal(f.maximum(), 50, 'max flow should be bottleneck capacity');
   });
 
-  test('diamond network correct flow', { skip: true }, () => {
+  test('diamond network correct flow', () => {
     const a = node('A');
     const b = node('B');
     const c = node('C');
@@ -95,7 +95,7 @@ describe('flow', () => {
     assert.throws(() => flow(net, a, b), /Sink node does not exist/, 'should throw for missing sink');
   });
 
-  test('no path from source to sink returns zero maximum', { skip: true }, () => {
+  test('no path from source to sink returns zero maximum', () => {
     const a = node('A');
     const b = node('B');
     let net = mutation(network()).add(a);
@@ -104,7 +104,7 @@ describe('flow', () => {
     assert.equal(f.maximum(), 0, 'disconnected nodes should have zero flow');
   });
 
-  test('random capacities', { skip: true }, () => {
+  test('random capacities', () => {
     const cap = Math.floor(Math.random() * 100) + 1;
     const a = node('A');
     const b = node('B');
@@ -116,7 +116,21 @@ describe('flow', () => {
     assert.equal(f.maximum(), cap, 'max flow should equal random capacity');
   });
 
-  test('bottlenecks returns edges at capacity', { skip: true }, () => {
+  test('bidirectional edges dont zero out residual capacity', () => {
+    const a = node('A');
+    const b = node('B');
+    const cap = Math.floor(Math.random() * 100) + 1;
+    const eAB = edge(a, b, 1, cap);
+    const eBA = edge(b, a, 1, cap);
+    let net = mutation(network()).add(a);
+    net = mutation(net).add(b);
+    net = mutation(net).link(eAB);
+    net = mutation(net).link(eBA);
+    const f = flow(net, a, b);
+    assert.ok(f.maximum() > 0, 'bidirectional edge flow was zero due to residual overwrite');
+  });
+
+  test('bottlenecks returns edges at capacity', () => {
     const a = node('A');
     const b = node('B');
     const c = node('C');
