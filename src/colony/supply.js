@@ -2,20 +2,20 @@
  * Creates an immutable supply route between two colony modules.
  *
  * A supply route delegates to an injected route algorithm for
- * shortest path computation over passable roads.
+ * shortest path computation over the roadmap's spanning network.
  *
- * @param {Object} col - The colony to route through
+ * @param {Object} rm - The roadmap whose span provides the routing network
  * @param {*} origin - Origin module identifier
  * @param {*} destination - Destination module identifier
  * @param {Function} algorithm - Route factory matching route(net, o, d) interface
  * @returns {Object} Supply with path, cost, exists, edges methods
  *
  * @example
- * const s = supply(colony, 0, 5, fakeRoute);
+ * const s = supply(roadmap(colony, tree), 0, 5, route);
  * s.exists(); // true if route found
  */
-const supply = (col, origin, destination, algorithm) => {
-  const net = col.passable();
+const supply = (rm, origin, destination, algorithm) => {
+  const net = rm.span();
   const originNode = net.nodes().get(origin);
   const destNode = net.nodes().get(destination);
   const result = algorithm(net, originNode, destNode);

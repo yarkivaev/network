@@ -2,7 +2,7 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { colony } from '../../src/colony/colony.js';
 import { roadmap } from '../../src/colony/roadmap.js';
-import { fakeTree } from '../../src/colony/fake.js';
+import { fakeTree, fakeRoute } from '../../src/colony/fake.js';
 import { tree } from '../../src/algorithm/tree.js';
 import { triangulation } from '../../src/generation/triangulation.js';
 import { normal } from '../../src/generation/normal.js';
@@ -45,5 +45,15 @@ describe('roadmap', () => {
     const mst = tree(passable).span();
     const expected = mst.edges().items().reduce((sum, e) => sum + e.cost(), 0);
     assert.equal(rm.cost(), expected, 'cost did not match MST edge sum');
+  });
+
+  test('span returns routable network between any two modules', () => {
+    const net = triangulation(5, normal(0, 10, Math.random), unit).network();
+    const col = colony(obstacle(net, nobs, new Map()), nobs);
+    const rm = roadmap(col, fakeTree);
+    const mstNet = rm.span();
+    const nodes = mstNet.nodes().items();
+    const r = fakeRoute(mstNet, nodes[0], nodes[nodes.length - 1]);
+    assert.ok(r.exists(), 'route not found on MST network');
   });
 });

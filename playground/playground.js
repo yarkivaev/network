@@ -56,10 +56,14 @@ let capacityMap = new Map();
 let weightMap = new Map();
 let sel = selection();
 let hl = highlight();
+let routeHl = highlight();
 let flowMap = new Map();
 let labels = [];
 let destroyMode = false;
+let showDistance = false;
+let showCapacity = false;
 let activeOverlay = null;
+let currentRoadmap = null;
 const nodeRadius = 7;
 
 const rebuildMaps = () => {
@@ -82,7 +86,9 @@ const canvas = {
     const id = Number(label);
     ctx.beginPath();
     ctx.arc(pos.x(), pos.y(), radius, 0, Math.PI * 2);
-    if (hl.nodes().has(id)) {
+    if (routeHl.nodes().has(id)) {
+      ctx.fillStyle = routeHl.color();
+    } else if (hl.nodes().has(id)) {
       ctx.fillStyle = hl.color();
     } else if (sel.has(id)) {
       ctx.fillStyle = '#4a90d9';
@@ -102,7 +108,10 @@ const canvas = {
   },
   line: (pos, halfWidth, halfHeight, edgeId) => {
     ctx.save();
-    if (hl.edges().has(edgeId)) {
+    if (routeHl.edges().has(edgeId)) {
+      ctx.strokeStyle = routeHl.color();
+      ctx.lineWidth = 2.5;
+    } else if (hl.edges().has(edgeId)) {
       ctx.strokeStyle = hl.color();
       ctx.lineWidth = 2.5;
     } else if (blockedEdges.has(edgeId)) {
@@ -115,14 +124,15 @@ const canvas = {
     ctx.moveTo(pos.x() - halfWidth, pos.y() - halfHeight);
     ctx.lineTo(pos.x() + halfWidth, pos.y() + halfHeight);
     ctx.stroke();
-    const cap = capacityMap.get(edgeId);
     const parts = edgeId.split('->');
-    if (cap !== undefined && parts[0] < parts[1]) {
-      const w = weightMap.get(edgeId);
-      const capStr = flowMap.has(edgeId) ? `${flowMap.get(edgeId).toFixed(0)}/${cap.toFixed(0)}` : `${cap.toFixed(0)}`;
-      const tag = `${w.toFixed(0)}|${capStr}`;
-      const isFlow = flowMap.has(edgeId);
-      labels.push({ x: pos.x(), y: pos.y() - 8, tag, isFlow });
+    if (parts[0] < parts[1] && (showDistance || showCapacity)) {
+      const segments = [];
+      if (showDistance) { segments.push(weightMap.get(edgeId).toFixed(0)); }
+      if (showCapacity) {
+        const cap = capacityMap.get(edgeId);
+        segments.push(flowMap.has(edgeId) ? `${flowMap.get(edgeId).toFixed(0)}/${cap.toFixed(0)}` : `${cap.toFixed(0)}`);
+      }
+      labels.push({ x: pos.x(), y: pos.y() - 8, tag: segments.join('|'), isFlow: flowMap.has(edgeId) });
     }
     ctx.restore();
   }
@@ -156,7 +166,7 @@ const updatePanel = () => {
     sel.identifiers().length > 0
       ? `Selected: ${sel.identifiers().join(' → ')}`
       : 'Click a module to select';
-  document.getElementById('results').textContent = hl.label();
+  document.getElementById('results').textContent = [hl.label(), routeHl.label()].filter(Boolean).join('\n');
 };
 
 const render = () => {
@@ -182,17 +192,19 @@ const render = () => {
 const runMst = () => {
   flowMap = new Map();
   try {
-    const rm = roadmap(col, tree);
-    hl = highlight(rm.edges(), new Set(), '#2ecc71', `Road network cost: ${rm.cost().toFixed(1)}`);
+    currentRoadmap = roadmap(col, tree);
+    hl = highlight(currentRoadmap.edges(), new Set(), '#2ecc71', `Road network cost: ${currentRoadmap.cost().toFixed(1)}`);
   } catch (e) {
+    currentRoadmap = null;
     hl = highlight(new Set(), new Set(), '#e74c3c', e.message);
   }
 };
 
 const rerunOverlay = () => {
   flowMap = new Map();
+  routeHl = highlight();
   if (activeOverlay === 'mst') { runMst(); }
-  else { hl = highlight(); }
+  else { currentRoadmap = null; hl = highlight(); }
 };
 
 const afterDestroy = () => {
@@ -228,6 +240,7 @@ el.onmousedown = (e) => {
     render();
     return;
   }
+  sel = selection();
   scn = scn.action(down(pt));
   render();
 };
@@ -252,24 +265,35 @@ el.onwheel = (e) => {
 document.getElementById('btn-mst').onclick = () => {
   activeOverlay = activeOverlay === 'mst' ? null : 'mst';
   document.getElementById('btn-mst').style.background = activeOverlay === 'mst' ? '#1a6b3a' : '#333';
+  document.getElementById('btn-route').style.display = activeOverlay === 'mst' ? '' : 'none';
   rerunOverlay();
   render();
 };
 
 document.getElementById('btn-route').onclick = () => {
   flowMap = new Map();
+  if (routeHl.edges().size > 0) {
+    routeHl = highlight();
+    render();
+    return;
+  }
+  if (activeOverlay !== 'mst' || currentRoadmap === null) {
+    routeHl = highlight(new Set(), new Set(), '', 'Enable Show Roads first');
+    render();
+    return;
+  }
   if (sel.origin() === undefined || sel.destination() === undefined) {
-    hl = highlight(new Set(), new Set(), '', 'Select 2 modules first');
+    routeHl = highlight(new Set(), new Set(), '', 'Select 2 modules first');
     render();
     return;
   }
-  const s = supply(col, sel.origin(), sel.destination(), route);
+  const s = supply(currentRoadmap, sel.origin(), sel.destination(), route);
   if (!s.exists()) {
-    hl = highlight(new Set(), new Set(), '', 'No route found');
+    routeHl = highlight(new Set(), new Set(), '', 'No route found');
     render();
     return;
   }
-  hl = highlight(s.edges(), new Set(s.path()), '#3498db', `Route cost: ${s.cost().toFixed(1)}`);
+  routeHl = highlight(s.edges(), new Set(s.path()), '#3498db', `Route cost: ${s.cost().toFixed(1)}`);
   render();
 };
 
@@ -314,8 +338,12 @@ document.getElementById('btn-restore').onclick = () => {
 document.getElementById('btn-reset').onclick = () => {
   sel = selection();
   hl = highlight();
+  routeHl = highlight();
   flowMap = new Map();
   render();
 };
+
+document.getElementById('chk-distance').onchange = (e) => { showDistance = e.target.checked; render(); };
+document.getElementById('chk-capacity').onchange = (e) => { showCapacity = e.target.checked; render(); };
 
 render();
