@@ -27,9 +27,13 @@ const maximumFlow = (net, source, sink) => {
     const reverseKey = `${targetId}-${sourceId}`;
     
     edgeMap.set(key, edge);
-    residualCapacity.set(key, edge.capacity());
-    residualCapacity.set(reverseKey, 0);
-    
+    if (residualCapacity.has(key)) {
+      residualCapacity.set(key, edge.capacity() + residualCapacity.get(key));
+    } else {
+      residualCapacity.set(key, edge.capacity());
+      residualCapacity.set(reverseKey, 0);
+    }
+
     if (!edgeMapByNode.has(sourceId)) { edgeMapByNode.set(sourceId, []); }
     edgeMapByNode.get(sourceId).push(edge);
     if (!edgeMapByNode.has(targetId)) { edgeMapByNode.set(targetId, []); }
@@ -49,8 +53,9 @@ const maximumFlow = (net, source, sink) => {
     
     while (queue.length > 0) {
       const currentId = queue.shift();
-      
-      if (currentId === sink.identifier()) {
+        console.log(currentId);
+        if (currentId === sink.identifier()) {
+          console.log(`sink ${currentId}`);
         // Reconstruct path and find bottleneck capacity
         const path = [];
         let node = sink.identifier();
@@ -84,8 +89,10 @@ const maximumFlow = (net, source, sink) => {
       for (const edge of edgeMapByNode.get(currentId) || []) {
         const tgtId = (edge.target().identifier() == currentId) ? edge.source().identifier() : edge.target().identifier();
         const srcId = currentId;
+        
         const edgeKey = `${srcId}-${tgtId}`;
         const capacity = residualCapacity.get(edgeKey) || 0;
+        console.log(`tgtId ${tgtId} cap ${capacity}`);
         if (capacity > 0 && !visited.has(tgtId)) {
             visited.add(tgtId);
             parent.set(tgtId, srcId);
