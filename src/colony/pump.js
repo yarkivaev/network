@@ -17,9 +17,10 @@
 const pump = (col, source, sink, algorithm) => {
   const net = col.passable();
   const result = algorithm(net, net.nodes().get(source), net.nodes().get(sink));
+  const computed = result.flows();
   const flows = new Map();
   for (const e of result.edges()) {
-    flows.set(e.identifier(), result.maximum());
+    flows.set(e.identifier(), computed.get(e.identifier()));
   }
   const necks = new Set(result.bottlenecks().map((e) => e.identifier()));
   return {

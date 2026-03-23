@@ -130,6 +130,49 @@ describe('flow', () => {
     assert.ok(f.maximum() > 0, 'bidirectional edge flow was zero due to residual overwrite');
   });
 
+test('flows returns per edge flow not total maximum', () => {
+  const a = node('A');
+  const b = node('B');
+  const c = node('C');
+  const d = node('D');
+  const eAB = edge(a, b, 1, 10);
+  const eAC = edge(a, c, 1, 10);
+  const eBD = edge(b, d, 1, 10);
+  const eCD = edge(c, d, 1, 10);
+  let net = mutation(network()).add(a);
+  net = mutation(net).add(b);
+  net = mutation(net).add(c);
+  net = mutation(net).add(d);
+  net = mutation(net).link(eAB);
+  net = mutation(net).link(eAC);
+  net = mutation(net).link(eBD);
+  net = mutation(net).link(eCD);
+  const f = flow(net, a, d);
+  const perEdge = f.flows();
+  assert.ok(perEdge instanceof Map, 'flows did not return a Map');
+  assert.equal(perEdge.get('A->B'), 10, 'edge A->B flow was not 10');
+  assert.equal(perEdge.get('A->C'), 10, 'edge A->C flow was not 10');
+  assert.equal(perEdge.get('B->D'), 10, 'edge B->D flow was not 10');
+  assert.equal(perEdge.get('C->D'), 10, 'edge C->D flow was not 10');
+});
+
+test('flows returns per edge flow for serial bottleneck', () => {
+  const a = node('A');
+  const b = node('B');
+  const c = node('C');
+  const eAB = edge(a, b, 1, 100);
+  const eBC = edge(b, c, 1, 30);
+  let net = mutation(network()).add(a);
+  net = mutation(net).add(b);
+  net = mutation(net).add(c);
+  net = mutation(net).link(eAB);
+  net = mutation(net).link(eBC);
+  const f = flow(net, a, c);
+  const perEdge = f.flows();
+  assert.equal(perEdge.get('A->B'), 30, 'edge A->B flow was not 30');
+  assert.equal(perEdge.get('B->C'), 30, 'edge B->C flow was not 30');
+});
+
   test('bottlenecks returns edges at capacity', () => {
     const a = node('A');
     const b = node('B');

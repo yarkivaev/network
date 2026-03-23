@@ -127,10 +127,15 @@ const fakeFlow = (net, source, sink) => {
   }
   const min = caps.length > 0 ? Math.min(...caps.map((e) => e.capacity())) : 0;
   const necks = caps.filter((e) => e.capacity() === min);
+  const flowValues = new Map();
+  for (const e of caps) {
+    flowValues.set(e.identifier(), min);
+  }
   return {
     maximum: () => min,
     bottlenecks: () => necks,
-    edges: () => [...caps]
+    edges: () => [...caps],
+    flows: () => flowValues
   };
 };
 
