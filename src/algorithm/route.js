@@ -1,6 +1,65 @@
 import { scan } from '../core/scan.js';
 
 /**
+ * Simple Min Priority Queue (binary heap)
+ */
+const priorityQueue = () => {
+  const heap = [];
+
+  const swap = (i, j) => {
+    [heap[i], heap[j]] = [heap[j], heap[i]];
+  };
+
+  const bubbleUp = (i) => {
+    while (i > 0) {
+      const parent = Math.floor((i - 1) / 2);
+      if (heap[parent].priority <= heap[i].priority) break;
+      swap(i, parent);
+      i = parent;
+    }
+  };
+
+  const bubbleDown = (i) => {
+    const n = heap.length;
+
+    while (true) {
+      let smallest = i;
+      const left = 2 * i + 1;
+      const right = 2 * i + 2;
+
+      if (left < n && heap[left].priority < heap[smallest].priority) {
+        smallest = left;
+      }
+      if (right < n && heap[right].priority < heap[smallest].priority) {
+        smallest = right;
+      }
+      if (smallest === i) break;
+
+      swap(i, smallest);
+      i = smallest;
+    }
+  };
+
+  return {
+    push: (value, priority) => {
+      heap.push({ value, priority });
+      bubbleUp(heap.length - 1);
+    },
+    pop: () => {
+      if (heap.length === 0) return null;
+      const top = heap[0];
+      const last = heap.pop();
+      if (heap.length > 0) {
+        heap[0] = last;
+        bubbleDown(0);
+      }
+      return top;
+    },
+    isEmpty: () => heap.length === 0
+  };
+};
+
+/**
  * Creates a route finder.
  *
  * @param {Object} net - The network to route through
@@ -43,41 +102,31 @@ const route = (net, origin, destination) => {
 
     distances.set(origin.identifier(), 0);
 
-    const visited = new Set();
+    const pq = priorityQueue();
+    pq.push(origin, 0);
 
-    while (visited.size < nodes.length) {
-      // find closest unvisited
-      let current = null;
-      let minDist = Infinity;
-
-      for (const n of nodes) {
-        const id = n.identifier();
-        if (!visited.has(id) && distances.get(id) < minDist) {
-          minDist = distances.get(id);
-          current = n;
-        }
-      }
-
-      if (current === null) break;
-
+    while (!pq.isEmpty()) {
+      const { value: current, priority } = pq.pop();
       const currentId = current.identifier();
-      visited.add(currentId);
+
+      const curDist = distances.get(currentId)
+      if (priority > curDist) continue;
 
       // stop early if reached destination
       if (currentId === destination.identifier()) break;
 
-      // relax edges
-      const neighbors = scanner.neighbors(current).from;
+      const edges = scanner.neighbors(current).from;
 
-      for (const e of neighbors) {
+      for (const e of edges) {
         const neighbor = e.target();
         const nid = neighbor.identifier();
 
-        const alt = distances.get(currentId) + e.cost();
+        const alt = curDist + e.cost();
 
         if (alt < distances.get(nid)) {
           distances.set(nid, alt);
           previous.set(nid, currentId);
+          pq.push(neighbor, alt);
         }
       }
     }
